@@ -43,6 +43,7 @@ const translations = {
     cancel: "Cancel",
     addNewProduct: "Add New Product",
     editProduct: "Edit Product",
+    edit: "Edit",
     productName: "Product Name",
     productCode: "Product Code",
     variants: "Color Variants",
@@ -100,13 +101,15 @@ const translations = {
     season: "Season",
     collarType: "Collar Type",
     series: "Series",
-    allSeasons: "All Seasons",
+    allSeason: "All Seasons",
     summer: "Summer",
     winter: "Winter",
     polo: "Polo",
     crewNeck: "Crew Neck",
     buttonCollar: "Button Collar",
     vNeck: "V-Neck",
+    shirtCollar: "Shirt Collar",
+    mockNeck: "Mock Neck",
     other: "Other",
     albums: "Albums",
     allItems: "All Items",
@@ -133,6 +136,9 @@ const translations = {
     male: "Male",
     female: "Female",
     unisex: "Unisex",
+    child: "Child",
+    boy: "Boy",
+    girl: "Girl",
     contentTemplates: "Content Templates",
     addNewContentTemplate: "Add New Content Template",
     editContentTemplate: "Edit Content Template",
@@ -177,6 +183,7 @@ const translations = {
     cancel: "İptal",
     addNewProduct: "Yeni Ürün Ekle",
     editProduct: "Ürünü Düzenle",
+    edit: "Düzenle",
     productName: "Ürün Adı",
     productCode: "Ürün Kodu",
     variants: "Renk Seçenekleri",
@@ -234,13 +241,15 @@ const translations = {
     season: "Sezon",
     collarType: "Yaka Tipi",
     series: "Seri",
-    allSeasons: "Tüm Sezonlar",
+    allSeason: "Tüm Sezonlar",
     summer: "Yazlık",
     winter: "Kışlık",
     polo: "Polo Yaka",
-    crewNeck: "Sıfır Yaka",
-    buttonCollar: "Çıtçıt Yaka",
+    crewNeck: "Bisiklet Yaka",
+    buttonCollar: "Çıt Çıt Yaka",
     vNeck: "V Yaka",
+    shirtCollar: "Gömlek Yaka",
+    mockNeck: "Yarım Balıkçıl",
     other: "Diğer",
     albums: "Albümler",
     allItems: "Tümünü Gör",
@@ -267,6 +276,9 @@ const translations = {
     male: "Erkek",
     female: "Kadın",
     unisex: "Üniseks",
+    child: "Çocuk",
+    boy: "Erkek Çocuk",
+    girl: "Kız Çocuk",
     contentTemplates: "İçerik Şablonları",
     addNewContentTemplate: "Yeni İçerik Şablonu Ekle",
     editContentTemplate: "İçerik Şablonunu Düzenle",
@@ -311,6 +323,7 @@ const translations = {
     cancel: "Отмена",
     addNewProduct: "Добавить новый продукт",
     editProduct: "Редактировать продукт",
+    edit: "Редактировать",
     productName: "Название продукта",
     productCode: "Код продукта",
     variants: "Цветовые варианты",
@@ -368,13 +381,15 @@ const translations = {
     season: "Сезон",
     collarType: "Тип воротника",
     series: "Серия",
-    allSeasons: "Все сезоны",
+    allSeason: "Все сезоны",
     summer: "Лето",
     winter: "Зима",
     polo: "Поло",
     crewNeck: "Круглый вырез",
     buttonCollar: "Воротник на пуговицах",
     vNeck: "V-образный вырез",
+    shirtCollar: "Воротник-рубашка",
+    mockNeck: "Воротник-стойка",
     other: "Другое",
     albums: "Альбомы",
     allItems: "Все товары",
@@ -401,6 +416,9 @@ const translations = {
     male: "Мужской",
     female: "Женский",
     unisex: "Унисекс",
+    child: "Ребенок",
+    boy: "Мальчик",
+    girl: "Девочка",
     contentTemplates: "Шаблоны состава",
     addNewContentTemplate: "Добавить новый шаблон состава",
     editContentTemplate: "Редактировать шаблон состава",
@@ -476,6 +494,13 @@ const ArrowLeftIcon = () => React.createElement("svg", { xmlns: "http://www.w3.o
 const VideoIcon = () => React.createElement("svg", { xmlns: "http://www.w3.org/2000/svg", width: "24", height: "24", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" }, React.createElement("path", { d: "m22 8-6 4 6 4V8Z" }), React.createElement("rect", { x: "2", y: "6", width: "14", height: "12", rx: "2", ry: "2" }));
 const VolumeOnIcon = () => React.createElement("svg", { xmlns: "http://www.w3.org/2000/svg", width: "24", height: "24", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" }, React.createElement("polygon", { points: "11 5 6 9 2 9 2 15 6 15 11 19 11 5" }), React.createElement("path", { d: "M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" }));
 const VolumeOffIcon = () => React.createElement("svg", { xmlns: "http://www.w3.org/2000/svg", width: "24", height: "24", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" }, React.createElement("polygon", { points: "11 5 6 9 2 9 2 15 6 15 11 19 11 5" }), React.createElement("line", { x1: "23", y1: "9", x2: "17", y2: "15" }), React.createElement("line", { x1: "17", y1: "9", x2: "23", y2: "15" }));
+
+const getTranslationKey = (str) => {
+    if (!str) return '';
+    return str.toLowerCase()
+        .replace(/[\s-](.)/g, (_match, group1) => group1.toUpperCase())
+        .replace(/[\s-]/g, '');
+};
 
 const formatCurrency = (amount, currency) => {
     const options = {
@@ -1007,10 +1032,10 @@ const CollarTypesManager = ({ collarTypes, onFetchData, t }) => {
                 collarTypes.map((type) => (
                     React.createElement("div", { key: type.id, className: "template-item" },
                         React.createElement("div", { className: "template-info" },
-                            React.createElement("h4", null, type.name)
+                            React.createElement("h4", null, t[getTranslationKey(type.name)] || type.name)
                         ),
                         React.createElement("div", { className: "template-actions" },
-                            React.createElement("button", { className: "btn-secondary", onClick: () => setEditingType(type) }, "Edit"),
+                            React.createElement("button", { className: "btn-secondary", onClick: () => setEditingType(type) }, t.edit),
                             React.createElement("button", { className: "btn-danger", onClick: () => handleDelete(type.id) }, t.delete)
                         )
                     )
@@ -1089,7 +1114,7 @@ const ContentManager = ({ contentTemplates, onFetchData, t }) => {
                             React.createElement("h4", null, template.name)
                         ),
                         React.createElement("div", { className: "template-actions" },
-                            React.createElement("button", { className: "btn-secondary", onClick: () => setEditingTemplate(template) }, "Edit"),
+                            React.createElement("button", { className: "btn-secondary", onClick: () => setEditingTemplate(template) }, t.edit),
                             React.createElement("button", { className: "btn-danger", onClick: () => handleDelete(template.id) }, t.delete)
                         )
                     )
@@ -1168,7 +1193,7 @@ const GenderManager = ({ genderTemplates, onFetchData, t }) => {
                             React.createElement("h4", null, t[template.name.toLowerCase()] || template.name)
                         ),
                         React.createElement("div", { className: "template-actions" },
-                            React.createElement("button", { className: "btn-secondary", onClick: () => setEditingTemplate(template) }, "Edit"),
+                            React.createElement("button", { className: "btn-secondary", onClick: () => setEditingTemplate(template) }, t.edit),
                             React.createElement("button", { className: "btn-danger", onClick: () => handleDelete(template.id) }, t.delete)
                         )
                     )
@@ -1430,7 +1455,7 @@ const ProductForm = ({ product: initialProduct, seriesTemplates, collarTypes, co
                             React.createElement("option", { value: "" }, t.select),
                             React.createElement("option", { value: "Summer" }, t.summer),
                             React.createElement("option", { value: "Winter" }, t.winter),
-                            React.createElement("option", { value: "All Season" }, t.allSeasons)
+                            React.createElement("option", { value: "All Season" }, t.allSeason)
                         )
                     ),
                     React.createElement("div", { className: "form-group" },
@@ -1438,7 +1463,7 @@ const ProductForm = ({ product: initialProduct, seriesTemplates, collarTypes, co
                         React.createElement("select", { value: product.collarType || '', onChange: (e) => handleChange('collarType', e.target.value) },
                             React.createElement("option", { value: "" }, t.select),
                             collarTypes.map((ct) => (
-                                React.createElement("option", { key: ct.id, value: ct.name }, ct.name)
+                                React.createElement("option", { key: ct.id, value: ct.name }, t[getTranslationKey(ct.name)] || ct.name)
                             ))
                         )
                     )
@@ -1764,7 +1789,7 @@ const ProductManager = ({ products, seriesTemplates, collarTypes, contentTemplat
                             React.createElement("p", null, product.code)
                         ),
                         React.createElement("div", { className: "admin-product-actions" },
-                            React.createElement("button", { className: "btn-secondary", onClick: () => handleEdit(product) }, "Edit"),
+                            React.createElement("button", { className: "btn-secondary", onClick: () => handleEdit(product) }, t.edit),
                             React.createElement("button", { className: "btn-danger", onClick: () => handleDelete(product.id) }, t.delete)
                         )
                     )
@@ -2134,7 +2159,7 @@ const SeriesTemplatesManager = ({ templates, onFetchData, t }) => {
                             React.createElement("p", null, template.seriesNames.join(', '))
                         ),
                         React.createElement("div", { className: "template-actions" },
-                            React.createElement("button", { className: "btn-secondary", onClick: () => setEditingTemplate(template) }, "Edit"),
+                            React.createElement("button", { className: "btn-secondary", onClick: () => setEditingTemplate(template) }, t.edit),
                             React.createElement("button", { className: "btn-danger", onClick: () => handleDelete(template.id) }, t.delete)
                         )
                     )
@@ -2350,7 +2375,7 @@ const FilterSidebar = ({ isOpen, onClose, products, activeFilters, setActiveFilt
                                     checked: activeFilters.seasons.includes(season),
                                     onChange: () => handleCheckboxChange('seasons', season)
                                 }),
-                                React.createElement("label", { htmlFor: `season-${season}` }, t[season.toLowerCase().replace(' ','')] || season)
+                                React.createElement("label", { htmlFor: `season-${season}` }, t[getTranslationKey(season)] || season)
                             )
                         ))
                     ),
@@ -2364,7 +2389,7 @@ const FilterSidebar = ({ isOpen, onClose, products, activeFilters, setActiveFilt
                                     checked: activeFilters.collarTypes.includes(type),
                                     onChange: () => handleCheckboxChange('collarTypes', type)
                                 }),
-                                React.createElement("label", { htmlFor: `collar-${type.replace(' ','-')}` }, t[type.toLowerCase().replace(' ','')] || type)
+                                React.createElement("label", { htmlFor: `collar-${type.replace(' ','-')}` }, t[getTranslationKey(type)] || type)
                             )
                         ))
                     ),
@@ -2378,7 +2403,7 @@ const FilterSidebar = ({ isOpen, onClose, products, activeFilters, setActiveFilt
                                     checked: activeFilters.genders.includes(gender),
                                     onChange: () => handleCheckboxChange('genders', gender)
                                 }),
-                                React.createElement("label", { htmlFor: `gender-${gender}` }, t[gender.toLowerCase()] || gender)
+                                React.createElement("label", { htmlFor: `gender-${gender}` }, t[getTranslationKey(gender)] || gender)
                             )
                         ))
                     ),
@@ -3450,7 +3475,73 @@ const App = () => {
   };
 
   useEffect(() => {
-    fetchData();
+    const setupInitialData = async () => {
+        let dataWasAdded = false;
+
+        const collarTypesToAdd = [
+            { name: 'Polo' },
+            { name: 'Crew Neck' },
+            { name: 'Button Collar' },
+            { name: 'V-Neck' },
+            { name: 'Shirt Collar' },
+            { name: 'Mock Neck' },
+        ];
+        
+        try {
+            const { data: existingTypes, error } = await db.from('collar_types').select('name');
+            if (error) throw error;
+
+            const existingNames = existingTypes.map(t => t.name);
+            const typesToInsert = collarTypesToAdd.filter(t => !existingNames.includes(t.name));
+
+            if (typesToInsert.length > 0) {
+                const { error: insertError } = await db.from('collar_types').insert(typesToInsert);
+                if (insertError) throw insertError;
+                console.log("Added initial collar types to the database.");
+                dataWasAdded = true;
+            }
+        } catch (e) {
+            console.error("Exception during initial collar type setup:", e);
+        }
+        
+        const genderTemplatesToAdd = [
+            { name: 'Male' },
+            { name: 'Female' },
+            { name: 'Unisex' },
+            { name: 'Child' },
+            { name: 'Boy' },
+            { name: 'Girl' },
+        ];
+        
+        try {
+            const { data: existingGenders, error } = await db.from('gender_templates').select('name');
+            if (error) throw error;
+            
+            const existingGenderNames = existingGenders.map(g => g.name);
+            const gendersToInsert = genderTemplatesToAdd.filter(g => !existingGenderNames.includes(g.name));
+            
+            if (gendersToInsert.length > 0) {
+                const { error: insertError } = await db.from('gender_templates').insert(gendersToInsert);
+                if (insertError) throw insertError;
+                console.log("Added initial gender templates to the database.");
+                dataWasAdded = true;
+            }
+        } catch(e) {
+            console.error("Exception during initial gender template setup:", e);
+        }
+        
+        return dataWasAdded;
+    };
+
+    const initializeApp = async () => {
+        await fetchData();
+        const dataWasAdded = await setupInitialData();
+        if (dataWasAdded) {
+            await fetchData(true); // Refetch data silently
+        }
+    };
+
+    initializeApp();
   }, []);
 
   useEffect(() => {
