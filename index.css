@@ -1363,7 +1363,7 @@ main {
 .gallery-view-container {
     display: grid;
     gap: 12px;
-    touch-action: pan-y;
+    touch-action: none;
 }
 
 .gallery-item {
@@ -1960,8 +1960,10 @@ main {
 }
 
 .image-viewer-close {
-    top: 15px;
-    right: 5%;
+    top: auto;
+    right: auto;
+    left: 50%;
+    bottom: 80px;
     transform: translateX(-50%);
 }
 .image-viewer-caption {
@@ -2008,6 +2010,11 @@ main {
     .image-viewer-nav.next {
         right: 15px;
         left: auto;
+    }
+    .image-viewer-close {
+        width: 40px;
+        height: 40px;
+        bottom: 65px;
     }
     .image-viewer-caption {
         font-size: 0.8rem;
