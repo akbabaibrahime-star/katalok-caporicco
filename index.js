@@ -2648,14 +2648,14 @@ const ImageViewer = ({ images, currentIndex, onClose, t }) => {
             const imgRect = imageNode.getBoundingClientRect();
             const containerRect = containerNode.getBoundingClientRect();
 
-            const top = imgRect.top - containerRect.top;
-            const right = containerRect.right - imgRect.right;
+            const top = (imgRect.top - containerRect.top) + 15;
+            const right = (containerRect.right - imgRect.right) + 15;
 
             setCloseBtnStyle({
                 position: 'absolute',
                 top: `${top}px`,
                 right: `${right}px`,
-                transform: 'translateY(-100%)',
+                transform: 'none',
                 zIndex: 2002,
                 display: 'flex'
             });
