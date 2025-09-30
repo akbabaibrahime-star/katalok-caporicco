@@ -1961,8 +1961,8 @@ main {
 
 .image-viewer-close {
     top: 15px;
-    right: 15px;
-    transform: none;
+    left: 50%;
+    transform: translateX(-50%);
 }
 .image-viewer-caption {
     position: absolute;
