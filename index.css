@@ -2018,7 +2018,7 @@ main {
     }
     .image-viewer-close {
         top: auto;
-        bottom: 15px;
+        bottom: 60px;
         left: 50%;
         right: auto;
         transform: translateX(-50%);
