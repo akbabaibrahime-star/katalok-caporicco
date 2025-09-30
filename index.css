@@ -1363,7 +1363,7 @@ main {
 .gallery-view-container {
     display: grid;
     gap: 12px;
-    touch-action: none;
+    touch-action: pan-y;
 }
 
 .gallery-item {
@@ -1961,8 +1961,8 @@ main {
 
 .image-viewer-close {
     top: 15px;
-    right: 15px;
-    transform: none;
+    left: 50%;
+    transform: translateX(-50%);
 }
 .image-viewer-caption {
     position: absolute;
@@ -2009,21 +2009,20 @@ main {
         right: 15px;
         left: auto;
     }
+    .image-viewer-close {
+        top: auto;
+        bottom: 65px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 40px;
+        height: 40px;
+    }
     .image-viewer-caption {
         font-size: 0.8rem;
         width: calc(100% - 110px);
         text-align: center;
         overflow: hidden;
         text-overflow: ellipsis;
-    }
-    .image-viewer-close {
-        top: auto;
-        bottom: 60px;
-        left: 50%;
-        right: auto;
-        transform: translateX(-50%);
-        width: 40px;
-        height: 40px;
     }
 }
 
