@@ -1363,7 +1363,7 @@ main {
 .gallery-view-container {
     display: grid;
     gap: 12px;
-    touch-action: none;
+    touch-action: pan-y;
 }
 
 .gallery-item {
