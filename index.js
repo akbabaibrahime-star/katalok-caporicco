@@ -1,6 +1,5 @@
 
 
-
 import React, { useState, useMemo, useRef, forwardRef, useEffect, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
 
@@ -2340,56 +2339,56 @@ const FilterSidebar = ({ isOpen, onClose, products, activeFilters, setActiveFilt
                     React.createElement("div", { className: "filter-section" },
                         React.createElement("h3", null, t.season),
                         filterOptions.seasons.map(season => (
-                            React.createElement("div", { key: season, className: "filter-option" },
+                            React.createElement("div", { key: String(season), className: "filter-option" },
                                 React.createElement("input", {
                                     type: "checkbox",
                                     id: `season-${season}`,
                                     checked: activeFilters.seasons.includes(season),
                                     onChange: () => handleCheckboxChange('seasons', season)
                                 }),
-                                React.createElement("label", { htmlFor: `season-${season}` }, t[season.toLowerCase().replace(' ','')] || season)
+                                React.createElement("label", { htmlFor: `season-${season}` }, t[String(season).toLowerCase().replace(' ','')] || season)
                             )
                         ))
                     ),
                     React.createElement("div", { className: "filter-section" },
                         React.createElement("h3", null, t.collarType),
                         filterOptions.collarTypes.map(type => (
-                            React.createElement("div", { key: type, className: "filter-option" },
+                            React.createElement("div", { key: String(type), className: "filter-option" },
                                 React.createElement("input", {
                                     type: "checkbox",
-                                    id: `collar-${type.replace(' ','-')}`,
+                                    id: `collar-${String(type).replace(' ','-')}`,
                                     checked: activeFilters.collarTypes.includes(type),
                                     onChange: () => handleCheckboxChange('collarTypes', type)
                                 }),
-                                React.createElement("label", { htmlFor: `collar-${type.replace(' ','-')}` }, t[type.toLowerCase().replace(' ','')] || type)
+                                React.createElement("label", { htmlFor: `collar-${String(type).replace(' ','-')}` }, t[String(type).toLowerCase().replace(' ','')] || type)
                             )
                         ))
                     ),
                     React.createElement("div", { className: "filter-section" },
                         React.createElement("h3", null, t.gender),
                         filterOptions.genders.map(gender => (
-                            React.createElement("div", { key: gender, className: "filter-option" },
+                            React.createElement("div", { key: String(gender), className: "filter-option" },
                                 React.createElement("input", {
                                     type: "checkbox",
                                     id: `gender-${gender}`,
                                     checked: activeFilters.genders.includes(gender),
                                     onChange: () => handleCheckboxChange('genders', gender)
                                 }),
-                                React.createElement("label", { htmlFor: `gender-${gender}` }, t[gender.toLowerCase()] || gender)
+                                React.createElement("label", { htmlFor: `gender-${gender}` }, t[String(gender).toLowerCase()] || gender)
                             )
                         ))
                     ),
                     React.createElement("div", { className: "filter-section" },
                         React.createElement("h3", null, t.series),
                         filterOptions.seriesNames.map(name => (
-                            React.createElement("div", { key: name, className: "filter-option" },
+                            React.createElement("div", { key: String(name), className: "filter-option" },
                                 React.createElement("input", {
                                     type: "checkbox",
-                                    id: `series-${name.replace(' ','-')}`,
+                                    id: `series-${String(name).replace(' ','-')}`,
                                     checked: activeFilters.seriesNames.includes(name),
                                     onChange: () => handleCheckboxChange('seriesNames', name)
                                 }),
-                                React.createElement("label", { htmlFor: `series-${name.replace(' ','-')}` }, name)
+                                React.createElement("label", { htmlFor: `series-${String(name).replace(' ','-')}` }, String(name))
                             )
                         ))
                     )
@@ -3388,7 +3387,7 @@ const App = () => {
                   colorCode: v.color_code,
                   imageUrl: v.image_url,
                   video_url: v.video_url,
-                  series: (v.series || []).map((s) => ({ ...s, id: String(s.id) }))
+                  series: (v.series || []).map((s) => ({ ...s, id: String(s.id), price: Number(s.price || 0), stock: Number(s.stock || 0) }))
               }))
           }));
           setProducts(formattedProducts);
