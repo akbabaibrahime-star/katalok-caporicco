@@ -2655,7 +2655,7 @@ const ImageViewer = ({ images, currentIndex, onClose, t }) => {
                 position: 'absolute',
                 top: `${top}px`,
                 right: `${right}px`,
-                transform: 'translate(50%, -100%)',
+                transform: 'translateY(-100%)',
                 zIndex: 2002,
                 display: 'flex'
             });
