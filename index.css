@@ -2442,3 +2442,20 @@ main {
         flex-wrap: wrap;
     }
 }
+
+.mobile-gallery-footer {
+    padding: 20px 15px;
+    text-align: center;
+    color: var(--secondary-color);
+    font-size: 0.8rem;
+    line-height: 1.5;
+    background-color: var(--background-color);
+}
+.mobile-gallery-footer p {
+    margin: 0 0 4px 0;
+}
+.mobile-gallery-footer p:first-child {
+    font-weight: 600;
+    color: var(--text-color);
+    font-size: 0.9rem;
+}
