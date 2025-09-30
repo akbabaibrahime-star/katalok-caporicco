@@ -1960,11 +1960,9 @@ main {
 }
 
 .image-viewer-close {
-    top: auto;
-    right: auto;
-    left: 50%;
-    bottom: 80px;
-    transform: translateX(-50%);
+    top: 15px;
+    right: 15px;
+    transform: none;
 }
 .image-viewer-caption {
     position: absolute;
@@ -2011,17 +2009,21 @@ main {
         right: 15px;
         left: auto;
     }
-    .image-viewer-close {
-        width: 40px;
-        height: 40px;
-        bottom: 65px;
-    }
     .image-viewer-caption {
         font-size: 0.8rem;
         width: calc(100% - 110px);
         text-align: center;
         overflow: hidden;
         text-overflow: ellipsis;
+    }
+    .image-viewer-close {
+        top: auto;
+        bottom: 15px;
+        left: 50%;
+        right: auto;
+        transform: translateX(-50%);
+        width: 40px;
+        height: 40px;
     }
 }
 
