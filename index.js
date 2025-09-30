@@ -156,6 +156,7 @@ const translations = {
     videoUpdateFailed: "Failed to update video.",
     searchByProductNameOrCode: "Search by product name or code...",
     videoUrlVariant: "Video URL (Variant)",
+    allRightsReserved: "All rights reserved.",
   },
   tr: {
     searchPlaceholder: "Ürün adı veya koduyla ara...",
@@ -289,6 +290,7 @@ const translations = {
     videoUpdateFailed: "Video güncellenemedi.",
     searchByProductNameOrCode: "Ürün adı veya koduyla ara...",
     videoUrlVariant: "Video URL (Varyant)",
+    allRightsReserved: "Tüm hakları saklıdır.",
   },
   ru: {
     searchPlaceholder: "Поиск по названию или коду товара...",
@@ -422,6 +424,7 @@ const translations = {
     videoUpdateFailed: "Не удалось обновить видео.",
     searchByProductNameOrCode: "Поиск по названию или коду товара...",
     videoUrlVariant: "URL видео (вариант)",
+    allRightsReserved: "Все права защищены.",
   },
 };
 
@@ -2858,7 +2861,7 @@ const ImageViewer = ({ images, currentIndex, onClose, t }) => {
     );
 };
 
-const GalleryView = ({ variants, onBulkAddToCart, onOpenFilters, t, activeFilters, seriesNameToTemplateMap }) => {
+const GalleryView = ({ variants, onBulkAddToCart, onOpenFilters, t, activeFilters, seriesNameToTemplateMap, storeSettings }) => {
     const [itemSize, setItemSize] = useState(220);
     useEffect(() => {
         setItemSize(window.innerWidth <= 768 ? 80 : 220);
@@ -3120,17 +3123,20 @@ const GalleryView = ({ variants, onBulkAddToCart, onOpenFilters, t, activeFilter
                     ))
                 )
             ),
-             viewerIndex !== null && (
-                React.createElement(ImageViewer, {
-                    images: displayedVariantsForViewer,
-                    currentIndex: viewerIndex,
-                    onClose: () => setViewerIndex(null),
-                    t: t
-                })
+            viewerIndex !== null && React.createElement(ImageViewer, {
+                images: displayedVariantsForViewer,
+                currentIndex: viewerIndex,
+                onClose: () => setViewerIndex(null),
+                t: t
+            }),
+            React.createElement("div", { className: "mobile-gallery-footer" },
+                React.createElement("p", null, storeSettings.name),
+                React.createElement("p", null, `© ${new Date().getFullYear()} ${storeSettings.brand || ''}. ${t.allRightsReserved}`)
             )
         )
     );
 };
+
 
 // --- SHORTS PLAYER ---
 const ShortsVideoItem = ({ item, isActive }) => {
@@ -3733,8 +3739,8 @@ const App = () => {
                 onClick: () => {
                     if (isAdminView) {
                         setIsAdminView(false);
-                    } else if (layout === 'gallery') {
-                        setLayout('double');
+                    } else {
+                        setIsPasswordModalOpen(true);
                     }
                 }
             }, storeSettings.name),
@@ -3767,10 +3773,6 @@ const App = () => {
                     React.createElement(CartIcon, null),
                     React.createElement("span", null, t.cart),
                     cartItems.length > 0 && React.createElement("span", { className: "cart-count" }, cartItems.length)
-                ),
-                React.createElement("button", { className: "admin-toggle-btn", onClick: () => setIsPasswordModalOpen(true) }, 
-                   React.createElement(AdminIcon, null),
-                   React.createElement("span", null, t.admin)
                 ),
                 React.createElement("div", { className: "view-toggle" },
                     React.createElement("button", { className: layout === 'double' ? 'active' : '', onClick: () => setLayout('double') }, React.createElement(ViewGridIcon, null)),
@@ -3826,7 +3828,8 @@ const App = () => {
                   onOpenFilters: () => setIsFilterOpen(true),
                   activeFilters,
                   seriesNameToTemplateMap,
-                  t
+                  t,
+                  storeSettings: storeSettings
               })
             ) : (
                 React.createElement("div", { className: `product-grid layout-${layout}` },
