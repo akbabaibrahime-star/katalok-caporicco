@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useMemo, useRef, forwardRef, useEffect, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
 
@@ -2339,56 +2340,56 @@ const FilterSidebar = ({ isOpen, onClose, products, activeFilters, setActiveFilt
                     React.createElement("div", { className: "filter-section" },
                         React.createElement("h3", null, t.season),
                         filterOptions.seasons.map(season => (
-                            React.createElement("div", { key: String(season), className: "filter-option" },
+                            React.createElement("div", { key: season, className: "filter-option" },
                                 React.createElement("input", {
                                     type: "checkbox",
                                     id: `season-${season}`,
                                     checked: activeFilters.seasons.includes(season),
                                     onChange: () => handleCheckboxChange('seasons', season)
                                 }),
-                                React.createElement("label", { htmlFor: `season-${season}` }, t[String(season).toLowerCase().replace(' ','')] || season)
+                                React.createElement("label", { htmlFor: `season-${season}` }, t[season.toLowerCase().replace(' ','')] || season)
                             )
                         ))
                     ),
                     React.createElement("div", { className: "filter-section" },
                         React.createElement("h3", null, t.collarType),
                         filterOptions.collarTypes.map(type => (
-                            React.createElement("div", { key: String(type), className: "filter-option" },
+                            React.createElement("div", { key: type, className: "filter-option" },
                                 React.createElement("input", {
                                     type: "checkbox",
-                                    id: `collar-${String(type).replace(' ','-')}`,
+                                    id: `collar-${type.replace(' ','-')}`,
                                     checked: activeFilters.collarTypes.includes(type),
                                     onChange: () => handleCheckboxChange('collarTypes', type)
                                 }),
-                                React.createElement("label", { htmlFor: `collar-${String(type).replace(' ','-')}` }, t[String(type).toLowerCase().replace(' ','')] || type)
+                                React.createElement("label", { htmlFor: `collar-${type.replace(' ','-')}` }, t[type.toLowerCase().replace(' ','')] || type)
                             )
                         ))
                     ),
                     React.createElement("div", { className: "filter-section" },
                         React.createElement("h3", null, t.gender),
                         filterOptions.genders.map(gender => (
-                            React.createElement("div", { key: String(gender), className: "filter-option" },
+                            React.createElement("div", { key: gender, className: "filter-option" },
                                 React.createElement("input", {
                                     type: "checkbox",
                                     id: `gender-${gender}`,
                                     checked: activeFilters.genders.includes(gender),
                                     onChange: () => handleCheckboxChange('genders', gender)
                                 }),
-                                React.createElement("label", { htmlFor: `gender-${gender}` }, t[String(gender).toLowerCase()] || gender)
+                                React.createElement("label", { htmlFor: `gender-${gender}` }, t[gender.toLowerCase()] || gender)
                             )
                         ))
                     ),
                     React.createElement("div", { className: "filter-section" },
                         React.createElement("h3", null, t.series),
                         filterOptions.seriesNames.map(name => (
-                            React.createElement("div", { key: String(name), className: "filter-option" },
+                            React.createElement("div", { key: name, className: "filter-option" },
                                 React.createElement("input", {
                                     type: "checkbox",
-                                    id: `series-${String(name).replace(' ','-')}`,
+                                    id: `series-${name.replace(' ','-')}`,
                                     checked: activeFilters.seriesNames.includes(name),
                                     onChange: () => handleCheckboxChange('seriesNames', name)
                                 }),
-                                React.createElement("label", { htmlFor: `series-${String(name).replace(' ','-')}` }, String(name))
+                                React.createElement("label", { htmlFor: `series-${name.replace(' ','-')}` }, name)
                             )
                         ))
                     )
@@ -2619,6 +2620,7 @@ const ImageViewer = ({ images, currentIndex, onClose, t }) => {
     const pinchStartDist = useRef(0);
     const touchStartX = useRef(0);
     const touchEndX = useRef(0);
+    const [closeBtnStyle, setCloseBtnStyle] = useState({ display: 'none' });
 
     const image = images[currentImageIndex];
 
@@ -2631,6 +2633,40 @@ const ImageViewer = ({ images, currentIndex, onClose, t }) => {
         resetZoomAndPan();
         setIsLoading(true);
     }, [currentImageIndex, resetZoomAndPan]);
+
+    useEffect(() => {
+        // Position the close button relative to the rendered image
+        if (isLoading || !imageRef.current || !containerRef.current) {
+            setCloseBtnStyle({ display: 'none' });
+            return;
+        }
+
+        const imageNode = imageRef.current;
+        const containerNode = containerRef.current;
+
+        const updatePosition = () => {
+            const imgRect = imageNode.getBoundingClientRect();
+            const containerRect = containerNode.getBoundingClientRect();
+
+            const top = imgRect.top - containerRect.top;
+            const right = containerRect.right - imgRect.right;
+
+            setCloseBtnStyle({
+                position: 'absolute',
+                top: `${top}px`,
+                right: `${right}px`,
+                transform: 'translate(50%, -100%)',
+                zIndex: 2002,
+                display: 'flex'
+            });
+        };
+        
+        updatePosition();
+
+        window.addEventListener('resize', updatePosition);
+        return () => window.removeEventListener('resize', updatePosition);
+
+    }, [isLoading, currentImageIndex, offset, zoom]);
 
     const handleNavigate = useCallback((direction) => {
         const totalImages = images.length;
@@ -2813,8 +2849,6 @@ const ImageViewer = ({ images, currentIndex, onClose, t }) => {
 
     return (
         React.createElement("div", { className: "image-viewer-overlay", onClick: onClose },
-            React.createElement("button", { className: "image-viewer-close", onClick: onClose, "aria-label": "Close viewer" }, React.createElement(XIcon, null)),
-            
             React.createElement("button", { className: "image-viewer-nav prev", onClick: (e) => { e.stopPropagation(); handleNavigate('prev'); }, "aria-label": "Previous image" },
                 React.createElement(ChevronLeftIcon, null)
             ),
@@ -2831,6 +2865,10 @@ const ImageViewer = ({ images, currentIndex, onClose, t }) => {
                 onTouchStart: handleTouchStart,
                 onTouchEnd: handleTouchEnd
             },
+                React.createElement("button", { 
+                    className: "image-viewer-close", 
+                    style: closeBtnStyle, 
+                    onClick: (e) => { e.stopPropagation(); onClose(); }, "aria-label": "Close viewer" }, React.createElement(XIcon, null)),
                 isLoading && React.createElement("div", { className: "viewer-loader" }),
                 React.createElement("img", {
                     ref: imageRef,
@@ -3387,7 +3425,7 @@ const App = () => {
                   colorCode: v.color_code,
                   imageUrl: v.image_url,
                   video_url: v.video_url,
-                  series: (v.series || []).map((s) => ({ ...s, id: String(s.id), price: Number(s.price || 0), stock: Number(s.stock || 0) }))
+                  series: (v.series || []).map((s) => ({ ...s, id: String(s.id) }))
               }))
           }));
           setProducts(formattedProducts);
