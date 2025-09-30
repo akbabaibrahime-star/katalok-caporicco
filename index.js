@@ -2620,7 +2620,6 @@ const ImageViewer = ({ images, currentIndex, onClose, t }) => {
     const pinchStartDist = useRef(0);
     const touchStartX = useRef(0);
     const touchEndX = useRef(0);
-    const [closeBtnStyle, setCloseBtnStyle] = useState({ display: 'none' });
 
     const image = images[currentImageIndex];
 
@@ -2633,40 +2632,6 @@ const ImageViewer = ({ images, currentIndex, onClose, t }) => {
         resetZoomAndPan();
         setIsLoading(true);
     }, [currentImageIndex, resetZoomAndPan]);
-
-    useEffect(() => {
-        // Position the close button relative to the rendered image
-        if (isLoading || !imageRef.current || !containerRef.current) {
-            setCloseBtnStyle({ display: 'none' });
-            return;
-        }
-
-        const imageNode = imageRef.current;
-        const containerNode = containerRef.current;
-
-        const updatePosition = () => {
-            const imgRect = imageNode.getBoundingClientRect();
-            const containerRect = containerNode.getBoundingClientRect();
-
-            const top = (imgRect.top - containerRect.top) + 15;
-            const right = (containerRect.right - imgRect.right) + 15;
-
-            setCloseBtnStyle({
-                position: 'absolute',
-                top: `${top}px`,
-                right: `${right}px`,
-                transform: 'none',
-                zIndex: 2002,
-                display: 'flex'
-            });
-        };
-        
-        updatePosition();
-
-        window.addEventListener('resize', updatePosition);
-        return () => window.removeEventListener('resize', updatePosition);
-
-    }, [isLoading, currentImageIndex, offset, zoom]);
 
     const handleNavigate = useCallback((direction) => {
         const totalImages = images.length;
@@ -2849,6 +2814,8 @@ const ImageViewer = ({ images, currentIndex, onClose, t }) => {
 
     return (
         React.createElement("div", { className: "image-viewer-overlay", onClick: onClose },
+            React.createElement("button", { className: "image-viewer-close", onClick: onClose, "aria-label": "Close viewer" }, React.createElement(XIcon, null)),
+            
             React.createElement("button", { className: "image-viewer-nav prev", onClick: (e) => { e.stopPropagation(); handleNavigate('prev'); }, "aria-label": "Previous image" },
                 React.createElement(ChevronLeftIcon, null)
             ),
@@ -2865,10 +2832,6 @@ const ImageViewer = ({ images, currentIndex, onClose, t }) => {
                 onTouchStart: handleTouchStart,
                 onTouchEnd: handleTouchEnd
             },
-                React.createElement("button", { 
-                    className: "image-viewer-close", 
-                    style: closeBtnStyle, 
-                    onClick: (e) => { e.stopPropagation(); onClose(); }, "aria-label": "Close viewer" }, React.createElement(XIcon, null)),
                 isLoading && React.createElement("div", { className: "viewer-loader" }),
                 React.createElement("img", {
                     ref: imageRef,
