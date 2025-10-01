@@ -108,7 +108,6 @@ const translations = {
     vNeck: "V-Neck",
     shirtCollar: "Shirt Collar",
     mockNeck: "Mock Neck",
-    cardigan: "Cardigan",
     other: "Other",
     albums: "Albums",
     allItems: "All Items",
@@ -249,7 +248,6 @@ const translations = {
     vNeck: "V Yaka",
     shirtCollar: "Gömlek Yaka",
     mockNeck: "Yarım Balıkçıl",
-    cardigan: "Hırka",
     other: "Diğer",
     albums: "Albümler",
     allItems: "Tümünü Gör",
@@ -390,7 +388,6 @@ const translations = {
     vNeck: "Мысик",
     shirtCollar: "Воротник-рубашка",
     mockNeck: "Водолазка",
-    cardigan: "Кардиган",
     other: "Другое",
     albums: "Альбомы",
     allItems: "Все товары",
@@ -2568,11 +2565,11 @@ const BulkAddToCartModal = ({ isOpen, onClose, selectedVariants, onConfirm, t })
     );
 };
 
-const ProductAlbumCard = ({ productGroup, onClick, t, itemSize, seriesNameToTemplateMap }) => {
+const ProductAlbumCard = ({ productGroup, onClick, t, seriesNameToTemplateMap }) => {
     const { product, variants } = productGroup;
     const coverImage = variants[0]?.imageUrl;
     const variantCount = variants.length;
-    const imageRenderSize = Math.ceil(itemSize * (window.devicePixelRatio || 1) * 0.5);
+    const imageRenderSize = 240;
 
     const seriesInfo = useMemo(() => {
         const uniqueSeries = new Map();
@@ -3138,7 +3135,6 @@ const GalleryView = ({ variants, onBulkAddToCart, onOpenFilters, t, activeFilter
                     productGroup: p,
                     onClick: () => setFocusedProduct(p.product),
                     t: t,
-                    itemSize: itemSize,
                     seriesNameToTemplateMap: seriesNameToTemplateMap
                 })
             ));
@@ -3149,7 +3145,7 @@ const GalleryView = ({ variants, onBulkAddToCart, onOpenFilters, t, activeFilter
             : variants;
             
         return displayedVariants.map((variant, index) => {
-            const imageRenderSize = Math.ceil(itemSize * (window.devicePixelRatio || 1) * 1.2);
+            const imageRenderSize = Math.ceil(itemSize * (window.devicePixelRatio || 1) * 1.5); // Increased multiplier for sharpness
             return (
                 React.createElement("div", {
                     key: variant.id,
@@ -3583,7 +3579,6 @@ const App = () => {
             { name: 'V-Neck' },
             { name: 'Shirt Collar' },
             { name: 'Mock Neck' },
-            { name: 'Cardigan' },
         ];
         
         try {
