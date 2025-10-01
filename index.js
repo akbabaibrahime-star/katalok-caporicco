@@ -1,6 +1,5 @@
 
 
-
 import React, { useState, useMemo, useRef, forwardRef, useEffect, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
 
@@ -2644,7 +2643,7 @@ const ImageViewer = ({ images, currentIndex, onClose, t, onSelectOptions }) => {
     const [zoom, setZoom] = useState(1);
     const [offset, setOffset] = useState({ x: 0, y: 0 });
     const [isDragging, setIsDragging] = useState(false);
-    const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+    const [dragStart, setDragStart] = useState({ x: 0, y: 0, offX: 0, offY: 0 });
     const [isLoading, setIsLoading] = useState(true);
     const [isSharing, setIsSharing] = useState(false);
     const imageRef = useRef(null);
@@ -2668,12 +2667,12 @@ const ImageViewer = ({ images, currentIndex, onClose, t, onSelectOptions }) => {
 
         if (nextImage) {
             const nextImageLoader = new Image();
-            nextImageLoader.src = nextImage.imageUrl; // Use original URL for max quality
+            nextImageLoader.src = getTransformedImageUrl(nextImage.imageUrl, {width: 2048, height: 2048, resize: 'contain', quality: 90});
         }
         
         if (prevImage) {
             const prevImageLoader = new Image();
-            prevImageLoader.src = prevImage.imageUrl; // Use original URL for max quality
+            prevImageLoader.src = getTransformedImageUrl(prevImage.imageUrl, {width: 2048, height: 2048, resize: 'contain', quality: 90});
         }
 
     }, [currentImageIndex, images]);
@@ -2754,30 +2753,22 @@ const ImageViewer = ({ images, currentIndex, onClose, t, onSelectOptions }) => {
         onSelectOptions(currentImage.product, currentImage);
         onClose();
     };
+
     const clampOffset = useCallback((newOffset, currentZoom) => {
         if (!imageRef.current || !containerRef.current || currentZoom <= 1) {
             return { x: 0, y: 0 };
         }
         const imageNode = imageRef.current;
         const containerNode = containerRef.current;
-
         const containerRect = containerNode.getBoundingClientRect();
-        
-        // Use clientWidth/Height which gives pre-transform dimensions.
         const baseImageWidth = imageNode.clientWidth;
         const baseImageHeight = imageNode.clientHeight;
-
         const zoomedWidth = baseImageWidth * currentZoom;
         const zoomedHeight = baseImageHeight * currentZoom;
-
         const overhangX = Math.max(0, zoomedWidth - containerRect.width);
         const overhangY = Math.max(0, zoomedHeight - containerRect.height);
-
-        // The offset is in pre-scaled coordinates.
-        // The maximum pan is half the overhang, divided by the zoom factor.
-        const maxOffsetX = overhangX / 2 / currentZoom;
-        const maxOffsetY = overhangY / 2 / currentZoom;
-        
+        const maxOffsetX = overhangX / 2;
+        const maxOffsetY = overhangY / 2;
         return {
             x: Math.max(-maxOffsetX, Math.min(maxOffsetX, newOffset.x)),
             y: Math.max(-maxOffsetY, Math.min(maxOffsetY, newOffset.y)),
@@ -2785,6 +2776,7 @@ const ImageViewer = ({ images, currentIndex, onClose, t, onSelectOptions }) => {
     }, []);
 
     const handleWheel = useCallback((e) => {
+        e.preventDefault();
         const zoomFactor = 1.1;
         const newZoom = e.deltaY < 0 ? zoom * zoomFactor : zoom / zoomFactor;
         const clampedZoom = Math.max(1, Math.min(newZoom, 5));
@@ -2794,18 +2786,20 @@ const ImageViewer = ({ images, currentIndex, onClose, t, onSelectOptions }) => {
         const rect = containerRef.current.getBoundingClientRect();
         const mouseX = e.clientX - rect.left;
         const mouseY = e.clientY - rect.top;
-
-        const imageX = (mouseX - rect.width / 2) / zoom - offset.x;
-        const imageY = (mouseY - rect.height / 2) / zoom - offset.y;
         
-        const newOffsetX = offset.x + imageX * (1 - clampedZoom / zoom);
-        const newOffsetY = offset.y + imageY * (1 - clampedZoom / zoom);
-
+        const mouseXRel = mouseX - rect.width / 2;
+        const mouseYRel = mouseY - rect.height / 2;
+        
+        const ratio = clampedZoom / zoom;
+        
+        const newOffsetX = mouseXRel * (1 - ratio) + offset.x * ratio;
+        const newOffsetY = mouseYRel * (1 - ratio) + offset.y * ratio;
+        
         setZoom(clampedZoom);
         if (clampedZoom <= 1) {
-             setOffset({x:0, y:0});
+            setOffset({x:0, y:0});
         } else {
-             setOffset(clampOffset({ x: newOffsetX, y: newOffsetY }, clampedZoom));
+            setOffset(clampOffset({ x: newOffsetX, y: newOffsetY }, clampedZoom));
         }
     }, [zoom, offset, clampOffset]);
     
@@ -2813,15 +2807,19 @@ const ImageViewer = ({ images, currentIndex, onClose, t, onSelectOptions }) => {
         if (zoom <= 1) return;
         e.preventDefault();
         setIsDragging(true);
-        setDragStart({ x: e.clientX - offset.x * zoom, y: e.clientY - offset.y * zoom });
+        setDragStart({ x: e.clientX, y: e.clientY, offX: offset.x, offY: offset.y });
     };
 
     const handleMouseMove = (e) => {
         if (!isDragging) return;
         e.preventDefault();
-        const newOffsetX = (e.clientX - dragStart.x) / zoom;
-        const newOffsetY = (e.clientY - dragStart.y) / zoom;
-        setOffset(clampOffset({ x: newOffsetX, y: newOffsetY }, zoom));
+        const deltaX = e.clientX - dragStart.x;
+        const deltaY = e.clientY - dragStart.y;
+        const newOffset = {
+            x: dragStart.offX + deltaX,
+            y: dragStart.offY + deltaY
+        };
+        setOffset(clampOffset(newOffset, zoom));
     };
 
     const handleMouseUp = () => {
@@ -2849,29 +2847,52 @@ const ImageViewer = ({ images, currentIndex, onClose, t, onSelectOptions }) => {
             touchEndX.current = e.touches[0].clientX;
             if (zoom > 1) {
                 setIsDragging(true);
-                setDragStart({ x: e.touches[0].clientX - offset.x * zoom, y: e.touches[0].clientY - offset.y * zoom });
+                setDragStart({ x: e.touches[0].clientX, y: e.touches[0].clientY, offX: offset.x, offY: offset.y });
             }
         }
     };
 
     const handleTouchMove = useCallback((e) => {
-        if (e.touches.length === 2) {
+        if (e.touches.length === 2 && containerRef.current) {
+            e.preventDefault();
             const newDist = getTouchDistance(e);
             if (pinchStartDist.current > 0) {
-              const zoomFactor = newDist / pinchStartDist.current;
-              const newZoom = Math.max(1, Math.min(zoom * zoomFactor, 5));
-              setZoom(newZoom);
+              const ratio = newDist / pinchStartDist.current;
+              const newZoom = Math.max(1, Math.min(zoom * ratio, 5));
+              
+              if (newZoom !== zoom) {
+                  const rect = containerRef.current.getBoundingClientRect();
+                  const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+                  const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+                  const mouseXRel = midX - rect.left - rect.width / 2;
+                  const mouseYRel = midY - rect.top - rect.height / 2;
+                  const zoomRatio = newZoom / zoom;
+                  
+                  const newOffsetX = mouseXRel * (1 - zoomRatio) + offset.x * zoomRatio;
+                  const newOffsetY = mouseYRel * (1 - zoomRatio) + offset.y * zoomRatio;
+
+                  setZoom(newZoom);
+                  if (newZoom <= 1) {
+                      setOffset({x: 0, y: 0});
+                  } else {
+                      setOffset(clampOffset({x: newOffsetX, y: newOffsetY}, newZoom));
+                  }
+              }
             }
             pinchStartDist.current = newDist;
         } else if (e.touches.length === 1) {
             touchEndX.current = e.touches[0].clientX;
             if (isDragging) {
-                const newOffsetX = (e.touches[0].clientX - dragStart.x) / zoom;
-                const newOffsetY = (e.touches[0].clientY - dragStart.y) / zoom;
-                setOffset(clampOffset({ x: newOffsetX, y: newOffsetY }, zoom));
+                const deltaX = e.touches[0].clientX - dragStart.x;
+                const deltaY = e.touches[0].clientY - dragStart.y;
+                const newOffset = {
+                    x: dragStart.offX + deltaX,
+                    y: dragStart.offY + deltaY
+                };
+                setOffset(clampOffset(newOffset, zoom));
             }
         }
-    }, [isDragging, dragStart, zoom, clampOffset]);
+    }, [isDragging, dragStart, zoom, offset, clampOffset]);
 
     const handleTouchEnd = () => {
         if (isDragging) setIsDragging(false);
@@ -2955,11 +2976,11 @@ const ImageViewer = ({ images, currentIndex, onClose, t, onSelectOptions }) => {
                 isLoading && React.createElement("div", { className: "viewer-loader" }),
                 React.createElement("img", {
                     ref: imageRef,
-                    src: image.imageUrl, // Use original URL for max quality
+                    src: getTransformedImageUrl(image.imageUrl, {width: 2048, height: 2048, resize: 'contain', quality: 90}),
                     alt: `${image.product.name} - ${image.colorName}`,
                     className: `image-viewer-content ${isPannable ? 'pannable' : ''} ${isDragging ? 'panning' : ''} ${isLoading ? 'loading' : ''}`,
                     style: { 
-                        transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom})`,
+                        transform: `scale(${zoom}) translate(${offset.x}px, ${offset.y}px)`,
                         transition: isDragging ? 'none' : 'transform 0.1s ease-out',
                         touchAction: 'none'
                     },
