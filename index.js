@@ -2980,7 +2980,39 @@ const GalleryView = ({ variants, onBulkAddToCart, onOpenFilters, t, activeFilter
             }
             productMap.get(p.id).variants.push(variant);
         });
-        return Array.from(productMap.values());
+        
+        const unsortedProducts = Array.from(productMap.values());
+
+        const naturalSort = (a, b) => {
+            const re = /(\d+)/g;
+            const aCode = String(a.product.code || '');
+            const bCode = String(b.product.code || '');
+
+            const aParts = aCode.split(re);
+            const bParts = bCode.split(re);
+
+            for (let i = 0; i < Math.min(aParts.length, bParts.length); i++) {
+                const aPart = aParts[i];
+                const bPart = bParts[i];
+                
+                if (i % 2) { // It's a number part
+                    const aInt = parseInt(aPart, 10);
+                    const bInt = parseInt(bPart, 10);
+                    if (aInt !== bInt) {
+                        return aInt - bInt;
+                    }
+                } else { // It's a string part
+                    const aStr = aPart.toLowerCase();
+                    const bStr = bPart.toLowerCase();
+                    if (aStr !== bStr) {
+                        return aStr.localeCompare(bStr);
+                    }
+                }
+            }
+            return aParts.length - bParts.length;
+        };
+        
+        return unsortedProducts.sort(naturalSort);
     }, [variants]);
     
     useEffect(() => {
