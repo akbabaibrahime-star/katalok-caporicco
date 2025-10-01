@@ -2948,6 +2948,65 @@ const ImageViewer = ({ images, currentIndex, onClose, t, onSelectOptions }) => {
     );
 };
 
+const LazyImage = ({ src, size, alt }) => {
+    if (!src) {
+        return React.createElement('div', { style: { width: '100%', height: '100%', backgroundColor: '#f0f0f0' }});
+    }
+
+    const placeholderSrc = getTransformedImageUrl(src, { width: 24, height: 24, quality: 20, resize: 'cover' });
+
+    const imageWidths = [200, 400, 600, 800, 1200];
+    const srcSet = imageWidths
+        .map(width => `${getTransformedImageUrl(src, { width, height: width, quality: 80, resize: 'cover' })} ${width}w`)
+        .join(', ');
+
+    const defaultSrc = getTransformedImageUrl(src, { width: 400, height: 400, quality: 80, resize: 'cover' });
+    
+    const [isLoaded, setIsLoaded] = useState(false);
+    
+    return (
+        React.createElement(React.Fragment, null,
+            React.createElement("img", {
+                src: placeholderSrc,
+                alt: alt,
+                style: {
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    filter: 'blur(10px)',
+                    transition: 'opacity 0.4s ease-out',
+                    opacity: isLoaded ? 0 : 1,
+                    transform: 'scale(1.1)',
+                    willChange: 'opacity',
+                }
+            }),
+            React.createElement("img", {
+                src: defaultSrc,
+                srcSet: srcSet,
+                sizes: `${Math.ceil(size)}px`,
+                alt: alt,
+                loading: "lazy",
+                onLoad: () => setIsLoaded(true),
+                style: {
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    transition: 'opacity 0.4s ease-in',
+                    opacity: isLoaded ? 1 : 0,
+                    willChange: 'opacity',
+                }
+            })
+        )
+    );
+};
+
+
 const GalleryView = ({ variants, onBulkAddToCart, onOpenFilters, t, activeFilters, seriesNameToTemplateMap, storeSettings, onSelectOptions }) => {
     const [itemSize, setItemSize] = useState(220);
     useEffect(() => {
@@ -3145,7 +3204,6 @@ const GalleryView = ({ variants, onBulkAddToCart, onOpenFilters, t, activeFilter
             : variants;
             
         return displayedVariants.map((variant, index) => {
-            const imageRenderSize = Math.ceil(itemSize * (window.devicePixelRatio || 1) * 1.5); // Increased multiplier for sharpness
             return (
                 React.createElement("div", {
                     key: variant.id,
@@ -3158,7 +3216,11 @@ const GalleryView = ({ variants, onBulkAddToCart, onOpenFilters, t, activeFilter
                         }
                     }
                 },
-                    React.createElement("img", { src: getTransformedImageUrl(variant.imageUrl, { width: imageRenderSize, height: imageRenderSize }), alt: variant.colorName }),
+                    React.createElement(LazyImage, { 
+                        src: variant.imageUrl, 
+                        size: itemSize, 
+                        alt: variant.colorName 
+                    }),
                     isSelectMode && (
                         React.createElement("div", { className: "selection-circle" },
                              selectedVariants.has(variant.id) && React.createElement(CheckIcon, null)
@@ -3570,424 +3632,414 @@ const App = () => {
 
   useEffect(() => {
     const setupInitialData = async () => {
-        let dataWasAdded = false;
-
         const collarTypesToAdd = [
-            { name: 'Polo' },
-            { name: 'Crew Neck' },
-            { name: 'Button Collar' },
-            { name: 'V-Neck' },
-            { name: 'Shirt Collar' },
-            { name: 'Mock Neck' },
+            { name: 'Polo' }, { name: 'Crew Neck' }, { name: 'Button Collar' },
+            { name: 'V-Neck' }, { name: 'Shirt Collar' }, { name: 'Mock Neck' },
         ];
-        
         try {
-            const { data: existingTypes, error } = await db.from('collar_types').select('name');
-            if (error) throw error;
-
-            const existingNames = existingTypes.map(t => t.name);
-            const typesToInsert = collarTypesToAdd.filter(t => !existingNames.includes(t.name));
-
-            if (typesToInsert.length > 0) {
-                const { error: insertError } = await db.from('collar_types').insert(typesToInsert);
+            const { data, count } = await db.from('collar_types').select('*', { count: 'exact', head: true });
+            if (count === 0) {
+                const { error: insertError } = await db.from('collar_types').insert(collarTypesToAdd);
                 if (insertError) throw insertError;
-                console.log("Added initial collar types to the database.");
-                dataWasAdded = true;
             }
-        } catch (e) {
-            console.error("Exception during initial collar type setup:", e);
-        }
+        } catch (e) { console.error("Exception during initial collar type setup:", e); }
         
         const genderTemplatesToAdd = [
-            { name: 'Male' },
-            { name: 'Female' },
-            { name: 'Unisex' },
-            { name: 'Child' },
-            { name: 'Boy' },
-            { name: 'Girl' },
+            { name: 'Male' }, { name: 'Female' }, { name: 'Unisex' },
+            { name: 'Child' }, { name: 'Boy' }, { name: 'Girl' },
         ];
-        
         try {
-            const { data: existingGenders, error } = await db.from('gender_templates').select('name');
-            if (error) throw error;
-            
-            const existingGenderNames = existingGenders.map(g => g.name);
-            const gendersToInsert = genderTemplatesToAdd.filter(g => !existingGenderNames.includes(g.name));
-            
-            if (gendersToInsert.length > 0) {
-                const { error: insertError } = await db.from('gender_templates').insert(gendersToInsert);
+            const { data, count } = await db.from('gender_templates').select('*', { count: 'exact', head: true });
+            if (count === 0) {
+                const { error: insertError } = await db.from('gender_templates').insert(genderTemplatesToAdd);
                 if (insertError) throw insertError;
-                console.log("Added initial gender templates to the database.");
-                dataWasAdded = true;
             }
-        } catch(e) {
-            console.error("Exception during initial gender template setup:", e);
-        }
+        } catch (e) { console.error("Exception during initial gender template setup:", e); }
         
-        return dataWasAdded;
-    };
-
-    const initializeApp = async () => {
         await fetchData();
-        const dataWasAdded = await setupInitialData();
-        if (dataWasAdded) {
-            await fetchData(true); // Refetch data silently
-        }
     };
-
-    initializeApp();
+    setupInitialData();
   }, []);
-
+  
   useEffect(() => {
-    localStorage.setItem('cartItems', JSON.stringify(cartItems));
+      try {
+          localStorage.setItem('cartItems', JSON.stringify(cartItems));
+      } catch (error) {
+          console.error("Could not save cart to localStorage", error);
+      }
   }, [cartItems]);
-
+  
   useEffect(() => {
     localStorage.setItem('appLanguage', language);
   }, [language]);
   
-  useEffect(() => {
-      const isMobileGallery = layout === 'gallery' && window.innerWidth <= 768;
-      document.body.classList.toggle('gallery-view-mobile', isMobileGallery);
-  }, [layout]);
+   useEffect(() => {
+        const isMobile = window.innerWidth <= 768;
+        if (isMobile && layout === 'gallery') {
+            document.body.classList.add('gallery-view-mobile');
+        } else {
+            document.body.classList.remove('gallery-view-mobile');
+        }
+        
+        return () => {
+             document.body.classList.remove('gallery-view-mobile');
+        };
+    }, [layout]);
 
-
-  const t = useMemo(() => translations[language] || translations.en, [language]);
+  const t = useMemo(() => translations[language], [language]);
   
   const seriesNameToTemplateMap = useMemo(() => {
-    const map = new Map();
-    seriesTemplates.forEach(template => {
-        template.seriesNames.forEach(name => {
-            if (!map.has(name)) {
-                map.set(name, template.name);
-            }
-        });
-    });
-    return map;
+      const map = new Map();
+      seriesTemplates.forEach(template => {
+          template.seriesNames.forEach(name => {
+              if (!map.has(name)) {
+                  map.set(name, template.name);
+              }
+          });
+      });
+      return map;
   }, [seriesTemplates]);
+  
+  const filteredProducts = useMemo(() => {
+    const sortedProducts = [...products].sort((a, b) => isNewProduct(b.created_at) - isNewProduct(a.created_at));
 
-  const filteredProductsAndVariants = useMemo(() => {
-    let filtered = products;
-
-    if (searchTerm) {
-        const lowercasedFilter = searchTerm.toLowerCase();
-        filtered = filtered.filter(product =>
-            product.name.toLowerCase().includes(lowercasedFilter) ||
-            product.code.toLowerCase().includes(lowercasedFilter)
+    const lowerCaseSearchTerm = searchTerm.toLowerCase();
+    
+    let productsToFilter = sortedProducts;
+    
+    if (lowerCaseSearchTerm) {
+         productsToFilter = productsToFilter.filter((product) =>
+            product.name.toLowerCase().includes(lowerCaseSearchTerm) ||
+            product.code.toLowerCase().includes(lowerCaseSearchTerm)
         );
     }
     
-    let variants = filtered.flatMap(p => p.variants.map(v => ({...v, product: p})));
+    const hasActiveFilters = Object.values(activeFilters).some(arr => arr.length > 0);
 
-    if (activeFilters.seasons.length > 0) {
-        variants = variants.filter(v => activeFilters.seasons.includes(v.product.season));
+    if (!hasActiveFilters) {
+      return productsToFilter;
     }
-    if (activeFilters.collarTypes.length > 0) {
-        variants = variants.filter(v => activeFilters.collarTypes.includes(v.product.collarType));
-    }
-    if (activeFilters.genders.length > 0) {
-        variants = variants.filter(v => activeFilters.genders.includes(v.product.gender));
-    }
-    if (activeFilters.seriesNames.length > 0) {
-        variants = variants.filter(v => v.series.some(s => activeFilters.seriesNames.includes(s.name)));
-    }
-    
-    // To avoid showing the same product multiple times in card view, we reconstruct the products list
-    const productMap = new Map();
-    variants.forEach(v => {
-        if (!productMap.has(v.product.id)) {
-            productMap.set(v.product.id, {...v.product, variants: []});
-        }
-    });
-    // Add only the filtered variants back to the products
-    variants.forEach(v => {
-        if (productMap.has(v.product.id)) {
-            const product = productMap.get(v.product.id);
-            // remove product property from variant to avoid circular structure
-            const { product: _, ...variantData } = v;
-            product.variants.push(variantData);
-        }
-    });
 
-    return { 
-        products: Array.from(productMap.values()),
-        variants: variants
-    };
+    return productsToFilter.filter(product => {
+      const seasonMatch = activeFilters.seasons.length === 0 || activeFilters.seasons.includes(product.season);
+      const collarMatch = activeFilters.collarTypes.length === 0 || activeFilters.collarTypes.includes(product.collarType);
+      const genderMatch = activeFilters.genders.length === 0 || activeFilters.genders.includes(product.gender);
+
+      const seriesMatch = activeFilters.seriesNames.length === 0 || product.variants.some(v =>
+        v.series.some(s => activeFilters.seriesNames.includes(s.name))
+      );
+
+      return seasonMatch && collarMatch && seriesMatch && genderMatch;
+    });
   }, [products, searchTerm, activeFilters]);
 
-  const shortsItems = useMemo(() => {
-      return products
-          .map(product => {
-              const videoVariants = product.variants.filter(v => v.video_url);
-              return {
-                  product: product,
-                  mainVideoUrl: product.video_url,
-                  videoVariants: videoVariants,
-              };
-          })
-          .filter(item => item.mainVideoUrl); // Only include items that have a main video for scrolling
-  }, [products]);
+    const filteredVariantsForGallery = useMemo(() => {
+        return filteredProducts.flatMap(p => p.variants.map(v => ({ ...v, product: p })));
+    }, [filteredProducts]);
+    
+    const cartStats = useMemo(() => {
+        let totalPacks = 0;
+        let totalUnits = 0;
+        
+        cartItems.forEach(item => {
+            const quantity = Number(item.quantity || 0);
+            totalPacks += quantity;
+            totalUnits += getUnitsPerSeries(item.series.name) * quantity;
+        });
+
+        return {
+            totalItemTypes: cartItems.length,
+            totalPacks,
+            totalUnits,
+        };
+    }, [cartItems]);
+    
+    const shortsItems = useMemo(() => {
+        return products.map(p => ({
+            product: p,
+            mainVideoUrl: p.video_url,
+            videoVariants: p.variants.filter(v => v.video_url)
+        })).filter(item => item.mainVideoUrl || item.videoVariants.length > 0);
+    }, [products]);
 
   const handleAddToCart = (series, quantity) => {
-      const { productInfo, productVariant } = modalData;
-      setCartItems((prevItems) => {
-          const existingItemIndex = prevItems.findIndex((item) => item.series.id === series.id);
-          if (existingItemIndex > -1) {
-              const newItems = [...prevItems];
-              newItems[existingItemIndex].quantity = Math.min(newItems[existingItemIndex].quantity + quantity, series.stock);
-              return newItems;
-          } else {
-              const newItem = {
-                  productName: productInfo.name,
-                  productCode: productInfo.code,
-                  variant: {
-                      id: productVariant.id,
-                      colorName: productVariant.colorName,
-                      imageUrl: productVariant.imageUrl
-                  },
-                  series: series,
-                  quantity: quantity
-              };
-              return [...prevItems, newItem];
-          }
-      });
+    setCartItems(prevItems => {
+      const existingItemIndex = prevItems.findIndex(item => item.series.id === series.id);
+      if (existingItemIndex > -1) {
+        const newItems = [...prevItems];
+        newItems[existingItemIndex].quantity = Number(newItems[existingItemIndex].quantity || 0) + quantity;
+        return newItems;
+      } else {
+        const product = products.find(p => p.variants.some(v => v.series.some(s => s.id === series.id)));
+        const variant = product.variants.find(v => v.series.some(s => s.id === series.id));
+        return [...prevItems, { 
+            productName: product.name,
+            productCode: product.code,
+            variant: { id: variant.id, colorName: variant.colorName, imageUrl: variant.imageUrl },
+            series, 
+            quantity 
+        }];
+      }
+    });
   };
-
-  const handleBulkAddToCart = (itemsToAdd) => {
-      setCartItems((prevItems) => {
-          const newItems = [...prevItems];
-          itemsToAdd.forEach(itemToAdd => {
-              const existingItemIndex = newItems.findIndex((item) => item.series.id === itemToAdd.series.id);
-              if (existingItemIndex > -1) {
-                  const existingItem = newItems[existingItemIndex];
-                  const newQuantity = Math.min(existingItem.quantity + itemToAdd.quantity, itemToAdd.series.stock);
-                  newItems[existingItemIndex] = { ...existingItem, quantity: newQuantity };
-              } else {
-                  newItems.push({
-                      productName: itemToAdd.product.name,
-                      productCode: itemToAdd.product.code,
-                      variant: {
-                          id: itemToAdd.variant.id,
-                          colorName: itemToAdd.variant.colorName,
-                          imageUrl: itemToAdd.variant.imageUrl
-                      },
-                      series: itemToAdd.series,
-                      quantity: itemToAdd.quantity
-                  });
-              }
-          });
-          return newItems;
-      });
-  };
+  
+    const handleBulkAddToCart = (items) => {
+        setCartItems(prevCartItems => {
+            const newCartItems = [...prevCartItems];
+            
+            items.forEach(itemToAdd => {
+                const existingItemIndex = newCartItems.findIndex(item => item.series.id === itemToAdd.series.id);
+                if (existingItemIndex > -1) {
+                    newCartItems[existingItemIndex].quantity = Number(newCartItems[existingItemIndex].quantity || 0) + itemToAdd.quantity;
+                } else {
+                     newCartItems.push({
+                         productName: itemToAdd.product.name,
+                         productCode: itemToAdd.product.code,
+                         variant: { id: itemToAdd.variant.id, colorName: itemToAdd.variant.colorName, imageUrl: itemToAdd.variant.imageUrl },
+                         series: itemToAdd.series,
+                         quantity: itemToAdd.quantity
+                     });
+                }
+            });
+            
+            return newCartItems;
+        });
+    };
 
   const handleRemoveFromCart = (seriesId) => {
-      setCartItems((prevItems) => prevItems.filter((item) => item.series.id !== seriesId));
+    setCartItems(prevItems => prevItems.filter(item => item.series.id !== seriesId));
   };
 
-  const handleUpdateCartQuantity = (seriesId, newQuantity) => {
-      setCartItems((prevItems) => {
-          return prevItems.map((item) => {
-              if (item.series.id === seriesId) {
-                  if (newQuantity <= 0) {
-                      return null; // Will be filtered out
-                  }
-                  return { ...item, quantity: Math.min(newQuantity, item.series.stock) };
-              }
-              return item;
-          }).filter(Boolean);
-      });
+  const handleUpdateQuantity = (seriesId, quantity) => {
+    setCartItems(prevItems => {
+        if (quantity <= 0) {
+            return prevItems.filter(item => item.series.id !== seriesId);
+        }
+        return prevItems.map(item =>
+            item.series.id === seriesId ? { ...item, quantity: String(quantity) } : item
+        );
+    });
   };
 
   const handleOpenModal = (product, variant) => {
-    setModalData({ productInfo: product, productVariant: variant });
+    setModalData({ product, variant });
     setIsModalOpen(true);
   };
-  
-  const handleShareOrder = async () => {
-    setIsSharing(true);
-    // Timeout to allow state to update and component to render
-    setTimeout(async () => {
-      if (shareImageRef.current) {
-        try {
-          const canvas = await html2canvas(shareImageRef.current, { useCORS: true, scale: 2 });
-          const dataUrl = canvas.toDataURL('image/png');
-          
-          const blob = await fetch(dataUrl).then(res => res.blob());
-          const file = new File([blob], 'order.png', { type: 'image/png' });
 
-          if (navigator.canShare && navigator.canShare({ files: [file] })) {
-             await navigator.share({
-                title: `${storeSettings.name} Order`,
-                text: `Order details from ${storeSettings.name}`,
-                files: [file]
-             });
-          } else {
-            // Fallback for browsers that don't support sharing files
-            const link = document.createElement('a');
-            link.href = dataUrl;
-            link.download = 'order.png';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-          }
-        } catch (error) {
-           if (error.name !== 'AbortError') { // Ignore user canceling share sheet
-              console.error("Sharing failed:", error);
-              alert('Failed to share order image.');
-           }
-        }
+  const handleCloseModal = () => setIsModalOpen(false);
+  
+  const handleLanguageChange = (e) => setLanguage(e.target.value);
+  
+  const handleAdminToggle = () => {
+      if (isAdminView) {
+          setIsAdminView(false);
+      } else {
+          setIsPasswordModalOpen(true);
       }
-      setIsSharing(false);
-    }, 100);
+  };
+  
+  const handlePasswordSubmit = () => {
+      if (passwordInput === ADMIN_PASSWORD) {
+          setIsAdminView(true);
+          setIsPasswordModalOpen(false);
+          setPasswordInput('');
+          setPasswordError('');
+      } else {
+          setPasswordError(t.incorrectPassword);
+      }
   };
 
-  const handleDownloadExcel = () => {
-    setIsDownloadingExcel(true);
-    setTimeout(() => {
+    const handleShareOrder = async () => {
+        setIsSharing(true);
         try {
-            const dataToExport = cartItems.map(item => {
-                const units = getUnitsPerSeries(item.series.name);
-                const unitPrice = units > 0 ? item.series.price / units : 0;
-                
-                return {
-                    'Brand': storeSettings.brand || '',
-                    'Manufacturer Title': storeSettings.manufacturerTitle || '',
-                    'Origin': storeSettings.origin || '',
-                    'Product Code': item.productCode,
-                    'Product Name': item.productName,
-                    'Color': item.variant.colorName,
-                    'Series': item.series.name,
-                    'Series Quantity': item.quantity,
-                    'Units per Series': units,
-                    'Total Units': item.quantity * units,
-                    'Unit Price': unitPrice.toFixed(2),
-                    'Series Price': item.series.price.toFixed(2),
-                    'Total Price': (item.quantity * item.series.price).toFixed(2),
-                    'Currency': item.series.currency,
-                    'Image URL': item.variant.imageUrl
-                };
+            const totals = cartItems.reduce((acc, item) => {
+              const { currency, price } = item.series;
+              const quantity = Number(item.quantity || 0);
+              if (!acc[currency]) acc[currency] = 0;
+              acc[currency] += price * quantity;
+              return acc;
+            }, {});
+            
+            // Temporarily render component to capture it
+            const tempDiv = document.createElement('div');
+            document.body.appendChild(tempDiv);
+            
+            const element = React.createElement(OrderShareImage, {
+              ref: shareImageRef,
+              cartItems: cartItems,
+              totals: totals,
+              t: t,
+              storeSettings: storeSettings,
+              cartStats: cartStats,
             });
 
-            const worksheet = XLSX.utils.json_to_sheet(dataToExport);
-            const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, "Order");
+            const root = createRoot(tempDiv);
+            
+            await new Promise(resolve => {
+                root.render(element);
+                // Use a short timeout to ensure the component is fully rendered with images
+                setTimeout(resolve, 500);
+            });
+            
+            if (shareImageRef.current) {
+                const canvas = await html2canvas(shareImageRef.current, { useCORS: true, scale: 2 });
+                const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.9));
+                
+                if (navigator.share && blob) {
+                   const file = new File([blob], 'order.jpg', { type: 'image/jpeg' });
+                   try {
+                     await navigator.share({
+                        title: `${storeSettings.name} Order`,
+                        files: [file],
+                     });
+                   } catch (error) {
+                       if (error.name !== 'AbortError') throw error;
+                   }
+                } else {
+                   const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+                   const link = document.createElement('a');
+                   link.href = dataUrl;
+                   link.download = 'order.jpg';
+                   link.click();
+                }
+            }
+            
+            root.unmount();
+            document.body.removeChild(tempDiv);
+        } catch (error) {
+            console.error('Sharing failed:', error);
+            alert('Could not share order.');
+        } finally {
+            setIsSharing(false);
+        }
+    };
+    
+    const handleDownloadExcel = async () => {
+        setIsDownloadingExcel(true);
+        try {
+            const wb = XLSX.utils.book_new();
+            
+            const groupedByProduct = cartItems.reduce((acc, item) => {
+                const key = `${item.productCode} - ${item.variant.colorName}`;
+                if (!acc[key]) {
+                    acc[key] = {
+                        productCode: item.productCode,
+                        productName: item.productName,
+                        color: item.variant.colorName,
+                        imageUrl: item.variant.imageUrl,
+                        series: []
+                    };
+                }
+                const units = getUnitsPerSeries(item.series.name);
+                const unitPrice = units > 0 ? item.series.price / units : item.series.price;
+                
+                acc[key].series.push({
+                    seriesName: item.series.name,
+                    quantity: Number(item.quantity),
+                    totalUnits: Number(item.quantity) * units,
+                    unitPrice: unitPrice,
+                    totalPrice: Number(item.quantity) * item.series.price,
+                    currency: item.series.currency
+                });
+                return acc;
+            }, {});
 
-            XLSX.writeFile(workbook, `${storeSettings.name}_Order_${new Date().toISOString().split('T')[0]}.xlsx`);
+            const data = Object.values(groupedByProduct).flatMap(group =>
+                group.series.map(s => ({
+                    [t.productCode]: group.productCode,
+                    [t.productName]: group.productName,
+                    [t.colorName]: group.color,
+                    [t.seriesName]: s.seriesName,
+                    [t.totalPacks]: s.quantity,
+                    [t.totalUnits]: s.totalUnits,
+                    [t.unitPrice]: s.unitPrice,
+                    [t.total]: s.totalPrice,
+                    [t.currency]: s.currency,
+                }))
+            );
+            
+            const ws = XLSX.utils.json_to_sheet(data);
+            XLSX.utils.book_append_sheet(wb, ws, "Order");
+
+            XLSX.writeFile(wb, `${storeSettings.name}_Order_${new Date().toLocaleDateString()}.xlsx`);
+
         } catch (error) {
             console.error("Failed to generate Excel file:", error);
-            alert("An error occurred while preparing the Excel file.");
+            alert("Could not generate Excel file.");
         } finally {
             setIsDownloadingExcel(false);
         }
-    }, 100);
-  };
-
-  const cartStats = useMemo(() => {
-    const totalPacks = cartItems.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
-    const totalUnits = cartItems.reduce((sum, item) => {
-        const units = getUnitsPerSeries(item.series.name);
-        return sum + (Number(item.quantity || 0) * units);
-    }, 0);
-    return {
-      totalItemTypes: cartItems.length,
-      totalPacks,
-      totalUnits
     };
-  }, [cartItems]);
 
-  const handleAdminLogin = () => {
-    if (passwordInput === ADMIN_PASSWORD) {
-        setIsAdminView(true);
-        setIsPasswordModalOpen(false);
-        setPasswordError('');
-        setPasswordInput('');
-    } else {
-        setPasswordError(t.incorrectPassword);
-    }
-  };
+    const handleLayoutChange = (newLayout) => {
+        setLayout(newLayout);
+    };
+    
+    const handleOpenShortsPlayer = (productId = null) => {
+        setActiveShortId(productId || shortsItems[0]?.product.id);
+        setIsShortsPlayerOpen(true);
+    };
 
   if (loading) {
-    return React.createElement("div", { className: "loader" }, "Loading catalog...");
+    return React.createElement("div", { className: "loader" }, "Loading...");
   }
-  
-  const headerContent = (
-    React.createElement("div", { className: "header-content" },
-        React.createElement("div", { className: "store-info" },
-            storeSettings.logo && React.createElement("img", { 
-                src: storeSettings.logo, 
-                alt: "Store Logo", 
-                className: "store-logo-img",
-                onClick: () => setIsPasswordModalOpen(true)
-            }),
-            React.createElement("h1", { 
-                className: "store-logo",
-                onClick: () => {
-                    if (isAdminView) {
-                        setIsAdminView(false);
-                    } else {
-                        setIsPasswordModalOpen(true);
-                    }
-                }
-            }, storeSettings.name),
-            React.createElement("h1", { 
-                className: "store-name-mobile-gallery", 
-                onClick: () => setLayout('double')
-            }, storeSettings.name)
-        ),
-        React.createElement("div", { className: "header-controls" },
-            !isMobileSearchVisible && React.createElement(React.Fragment, null,
-                React.createElement("div", { className: "search-bar desktop-search-bar" },
-                    React.createElement("div", { className: "search-icon" }, React.createElement(SearchIcon, null)),
-                    React.createElement("input", { type: "text", placeholder: t.searchPlaceholder, value: searchTerm, onChange: (e) => setSearchTerm(e.target.value) })
-                ),
-                 React.createElement("button", { className: "mobile-search-toggle", onClick: () => setIsMobileSearchVisible(true) }, React.createElement(SearchIcon, null)),
-                 React.createElement("button", { className: "shorts-toggle-btn", onClick: () => {
-                     if (shortsItems.length > 0) {
-                         setActiveShortId(shortsItems[0].product.id);
-                         setIsShortsPlayerOpen(true);
-                     }
-                 }, disabled: shortsItems.length === 0 }, React.createElement(VideoIcon, null)),
-                 React.createElement("div", { className: "language-switcher" },
-                    React.createElement("select", { value: language, onChange: (e) => setLanguage(e.target.value) },
-                        React.createElement("option", { value: "en" }, "EN"),
-                        React.createElement("option", { value: "tr" }, "TR"),
-                        React.createElement("option", { value: "ru" }, "RU")
-                    )
-                ),
-                React.createElement("button", { className: "cart-button", onClick: () => setIsCartOpen(true) },
-                    React.createElement(CartIcon, null),
-                    React.createElement("span", null, t.cart),
-                    cartItems.length > 0 && React.createElement("span", { className: "cart-count" }, cartItems.length)
-                ),
-                React.createElement("div", { className: "view-toggle" },
-                    React.createElement("button", { className: layout === 'double' ? 'active' : '', onClick: () => setLayout('double') }, React.createElement(ViewGridIcon, null)),
-                    React.createElement("button", { className: layout === 'gallery' ? 'active' : '', onClick: () => setLayout('gallery') }, React.createElement(ViewGalleryIcon, null))
-                )
-            ),
-             isMobileSearchVisible && layout === 'gallery' && (
-                React.createElement("div", { className: "search-bar mobile-search-bar-active" },
-                    React.createElement("button", { className: "mobile-search-back-btn", onClick: () => setIsMobileSearchVisible(false) }, React.createElement(ArrowLeftIcon, null)),
-                    React.createElement("div", { className: "search-input-wrapper" },
-                        React.createElement("div", { className: "search-icon" }, React.createElement(SearchIcon, null)),
-                        React.createElement("input", { type: "text", placeholder: t.searchPlaceholder, value: searchTerm, onChange: (e) => setSearchTerm(e.target.value), autoFocus: true })
-                    )
-                )
-            )
-        )
-    )
-  );
-  
-  const totals = cartItems.reduce((acc, item) => {
-    const { currency, price } = item.series;
-    if (!acc[currency]) acc[currency] = 0;
-    acc[currency] += price * Number(item.quantity || 0);
-    return acc;
-  }, {});
 
   return (
     React.createElement(React.Fragment, null,
       React.createElement("header", { className: "app-header" },
-        React.createElement("div", { className: "container" }, headerContent)
+        React.createElement("div", { className: "container" },
+          React.createElement("div", { className: "header-content" },
+            React.createElement("div", { className: "store-info" },
+                storeSettings.logo && React.createElement("img", { src: storeSettings.logo, alt: "Store Logo", className: "store-logo-img", onClick: () => { if (layout === 'gallery') window.location.reload(); } }),
+                React.createElement("h1", { className: "store-logo", onClick: () => { if (layout !== 'gallery') window.location.reload(); } }, storeSettings.name),
+                React.createElement("h1", { className: "store-name-mobile-gallery", onClick: () => window.location.reload() }, storeSettings.name)
+            ),
+            !isAdminView && (
+                React.createElement("div", { className: `search-bar desktop-search-bar ${isMobileSearchVisible ? 'mobile-search-bar-active' : ''}` },
+                    isMobileSearchVisible && React.createElement("button", { className: "mobile-search-back-btn", onClick: () => setIsMobileSearchVisible(false) }, React.createElement(ArrowLeftIcon, null)),
+                    React.createElement("div", { className: "search-input-wrapper" },
+                        React.createElement(SearchIcon, { className: "search-icon" }),
+                        React.createElement("input", {
+                            type: "text",
+                            placeholder: t.searchPlaceholder,
+                            value: searchTerm,
+                            onChange: (e) => setSearchTerm(e.target.value)
+                        })
+                    )
+                )
+            ),
+            React.createElement("div", { className: "header-controls" },
+              !isAdminView && (
+                  React.createElement(React.Fragment, null,
+                    React.createElement("button", { className: "mobile-search-toggle", onClick: () => setIsMobileSearchVisible(true) }, React.createElement(SearchIcon, null)),
+                    shortsItems.length > 0 && React.createElement("button", { className: "btn-secondary shorts-toggle-btn", onClick: () => handleOpenShortsPlayer() }, React.createElement(VideoIcon, null)),
+                    React.createElement("div", { className: "view-toggle" },
+                        React.createElement("button", { className: layout === 'double' ? 'active' : '', onClick: () => handleLayoutChange('double'), title: "Double Grid" }, React.createElement(ViewGridIcon, null)),
+                        React.createElement("button", { className: layout === 'gallery' ? 'active' : '', onClick: () => handleLayoutChange('gallery'), title: t.galleryView }, React.createElement(ViewGalleryIcon, null))
+                    )
+                  )
+              ),
+              React.createElement("div", { className: "language-switcher" },
+                React.createElement("select", { value: language, onChange: handleLanguageChange },
+                  React.createElement("option", { value: "en" }, "EN"),
+                  React.createElement("option", { value: "tr" }, "TR"),
+                  React.createElement("option", { value: "ru" }, "RU")
+                )
+              ),
+              React.createElement("button", { className: "admin-toggle-btn", onClick: handleAdminToggle },
+                React.createElement(AdminIcon, null),
+                React.createElement("span", null, isAdminView ? t.viewCatalog : t.admin)
+              ),
+              !isAdminView && (
+                React.createElement("button", { className: "cart-button", onClick: () => setIsCartOpen(true) },
+                    React.createElement(CartIcon, null),
+                    React.createElement("span", null, t.cart),
+                    cartItems.length > 0 && React.createElement("span", { className: "cart-count" }, cartItems.length)
+                )
+              )
+            )
+          )
+        )
       ),
       React.createElement("main", null,
         React.createElement("div", { className: "container" },
@@ -4007,21 +4059,21 @@ const App = () => {
             })
           ) : (
             layout === 'gallery' ? (
-              React.createElement(GalleryView, {
-                  variants: filteredProductsAndVariants.variants,
-                  onBulkAddToCart: handleBulkAddToCart,
-                  onOpenFilters: () => setIsFilterOpen(true),
-                  activeFilters,
-                  seriesNameToTemplateMap,
-                  t,
-                  storeSettings: storeSettings,
-                  onSelectOptions: handleOpenModal
-              })
+                React.createElement(GalleryView, { 
+                    variants: filteredVariantsForGallery,
+                    onBulkAddToCart: handleBulkAddToCart, 
+                    onOpenFilters: () => setIsFilterOpen(true),
+                    t: t,
+                    activeFilters: activeFilters,
+                    seriesNameToTemplateMap: seriesNameToTemplateMap,
+                    storeSettings: storeSettings,
+                    onSelectOptions: handleOpenModal
+                })
             ) : (
                 React.createElement("div", { className: `product-grid layout-${layout}` },
-                    filteredProductsAndVariants.products.map(product =>
-                        React.createElement(ProductCard, { key: product.id, product: product, onSelectOptions: handleOpenModal, t: t })
-                    )
+                  filteredProducts.map(product =>
+                    React.createElement(ProductCard, { key: product.id, product, onSelectOptions: handleOpenModal, t })
+                  )
                 )
             )
           )
@@ -4029,59 +4081,54 @@ const App = () => {
       ),
       React.createElement(SeriesSelectionModal, {
         isOpen: isModalOpen,
-        onClose: () => setIsModalOpen(false),
-        productInfo: modalData?.productInfo,
-        productVariant: modalData?.productVariant,
+        onClose: handleCloseModal,
+        productInfo: modalData?.product,
+        productVariant: modalData?.variant,
         onAddToCart: handleAddToCart,
-        t: t
+        t
       }),
       React.createElement(CartSidebar, {
         isOpen: isCartOpen,
         onClose: () => setIsCartOpen(false),
-        cartItems: cartItems,
+        cartItems,
         onRemoveItem: handleRemoveFromCart,
-        onUpdateQuantity: handleUpdateCartQuantity,
+        onUpdateQuantity: handleUpdateQuantity,
         onShareOrder: handleShareOrder,
         isSharing: isSharing,
         cartStats: cartStats,
-        t: t,
+        t,
         onDownloadExcel: handleDownloadExcel,
-        isDownloadingExcel: isDownloadingExcel,
+        isDownloadingExcel: isDownloadingExcel
       }),
-       React.createElement(AdminPasswordModal, {
-          isOpen: isPasswordModalOpen,
-          onClose: () => setIsPasswordModalOpen(false),
-          onSubmit: handleAdminLogin,
-          password: passwordInput,
-          setPassword: setPasswordInput,
-          error: passwordError,
-          t: t
+      React.createElement(AdminPasswordModal, {
+        isOpen: isPasswordModalOpen,
+        onClose: () => setIsPasswordModalOpen(false),
+        onSubmit: handlePasswordSubmit,
+        password: passwordInput,
+        setPassword: setPasswordInput,
+        error: passwordError,
+        t
       }),
       React.createElement(FilterSidebar, {
-          isOpen: isFilterOpen,
-          onClose: () => setIsFilterOpen(false),
-          products: products,
-          activeFilters: activeFilters,
-          setActiveFilters: setActiveFilters,
-          t: t,
+        isOpen: isFilterOpen,
+        onClose: () => setIsFilterOpen(false),
+        products: products,
+        activeFilters: activeFilters,
+        setActiveFilters: setActiveFilters,
+        t
       }),
       React.createElement(ShortsPlayer, {
           isOpen: isShortsPlayerOpen,
-          onClose: () => setIsShortsPlayerOpen(false),
           shortsItems: shortsItems,
           activeShortId: activeShortId,
-      }),
-      React.createElement(OrderShareImage, {
-        ref: shareImageRef,
-        cartItems: cartItems,
-        totals: totals,
-        t: t,
-        storeSettings: storeSettings,
-        cartStats: cartStats,
+          onClose: () => setIsShortsPlayerOpen(false)
       })
     )
   );
 };
 
-const root = createRoot(document.getElementById('root'));
-root.render(React.createElement(App, null));
+const rootElement = document.getElementById('root');
+if (rootElement) {
+  const root = createRoot(rootElement);
+  root.render(React.createElement(App));
+}
