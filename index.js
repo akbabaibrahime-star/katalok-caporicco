@@ -3583,6 +3583,7 @@ const App = () => {
             { name: 'V-Neck' },
             { name: 'Shirt Collar' },
             { name: 'Mock Neck' },
+            { name: 'Cardigan' },
         ];
         
         try {
