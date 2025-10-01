@@ -2652,6 +2652,29 @@ const ImageViewer = ({ images, currentIndex, onClose, t, onSelectOptions }) => {
     const touchEndX = useRef(0);
 
     const image = images[currentImageIndex];
+    
+    // Preload next and previous images for smoother navigation
+    useEffect(() => {
+        if (images.length <= 1) return;
+
+        const totalImages = images.length;
+        const nextIndex = (currentImageIndex + 1) % totalImages;
+        const prevIndex = (currentImageIndex - 1 + totalImages) % totalImages;
+        
+        const nextImage = images[nextIndex];
+        const prevImage = images[prevIndex];
+
+        if (nextImage) {
+            const nextImageLoader = new Image();
+            nextImageLoader.src = getTransformedImageUrl(nextImage.imageUrl, {width: 1200, height: 1200, resize: 'contain', quality: 90});
+        }
+        
+        if (prevImage) {
+            const prevImageLoader = new Image();
+            prevImageLoader.src = getTransformedImageUrl(prevImage.imageUrl, {width: 1200, height: 1200, resize: 'contain', quality: 90});
+        }
+
+    }, [currentImageIndex, images]);
 
     const resetZoomAndPan = useCallback(() => {
         setZoom(1);
