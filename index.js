@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useMemo, useRef, forwardRef, useEffect, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
 
@@ -2667,12 +2668,12 @@ const ImageViewer = ({ images, currentIndex, onClose, t, onSelectOptions }) => {
 
         if (nextImage) {
             const nextImageLoader = new Image();
-            nextImageLoader.src = getTransformedImageUrl(nextImage.imageUrl, {width: 2048, height: 2048, resize: 'contain', quality: 90});
+            nextImageLoader.src = nextImage.imageUrl; // Use original URL for max quality
         }
         
         if (prevImage) {
             const prevImageLoader = new Image();
-            prevImageLoader.src = getTransformedImageUrl(prevImage.imageUrl, {width: 2048, height: 2048, resize: 'contain', quality: 90});
+            prevImageLoader.src = prevImage.imageUrl; // Use original URL for max quality
         }
 
     }, [currentImageIndex, images]);
@@ -2954,7 +2955,7 @@ const ImageViewer = ({ images, currentIndex, onClose, t, onSelectOptions }) => {
                 isLoading && React.createElement("div", { className: "viewer-loader" }),
                 React.createElement("img", {
                     ref: imageRef,
-                    src: getTransformedImageUrl(image.imageUrl, {width: 2048, height: 2048, resize: 'contain', quality: 90}),
+                    src: image.imageUrl, // Use original URL for max quality
                     alt: `${image.product.name} - ${image.colorName}`,
                     className: `image-viewer-content ${isPannable ? 'pannable' : ''} ${isDragging ? 'panning' : ''} ${isLoading ? 'loading' : ''}`,
                     style: { 
