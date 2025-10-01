@@ -108,6 +108,7 @@ const translations = {
     vNeck: "V-Neck",
     shirtCollar: "Shirt Collar",
     mockNeck: "Mock Neck",
+    cardigan: "Cardigan",
     other: "Other",
     albums: "Albums",
     allItems: "All Items",
@@ -248,6 +249,7 @@ const translations = {
     vNeck: "V Yaka",
     shirtCollar: "Gömlek Yaka",
     mockNeck: "Yarım Balıkçıl",
+    cardigan: "Hırka",
     other: "Diğer",
     albums: "Albümler",
     allItems: "Tümünü Gör",
@@ -388,6 +390,7 @@ const translations = {
     vNeck: "Мысик",
     shirtCollar: "Воротник-рубашка",
     mockNeck: "Водолазка",
+    cardigan: "Кардиган",
     other: "Другое",
     albums: "Альбомы",
     allItems: "Все товары",
@@ -3633,9 +3636,15 @@ const App = () => {
   useEffect(() => {
     const setupInitialData = async () => {
         const collarTypesToAdd = [
-            { name: 'Polo' }, { name: 'Crew Neck' }, { name: 'Button Collar' },
-            { name: 'V-Neck' }, { name: 'Shirt Collar' }, { name: 'Mock Neck' },
+            { name: 'Polo' },
+            { name: 'Crew Neck' },
+            { name: 'Button Collar' },
+            { name: 'V-Neck' },
+            { name: 'Shirt Collar' },
+            { name: 'Mock Neck' },
+            { name: 'Cardigan' },
         ];
+        
         try {
             const { data, count } = await db.from('collar_types').select('*', { count: 'exact', head: true });
             if (count === 0) {
@@ -3849,6 +3858,12 @@ const App = () => {
       }
   };
 
+  const handleLayoutToggle = () => {
+    if (!isAdminView) {
+        setLayout(prevLayout => (prevLayout === 'double' ? 'gallery' : 'double'));
+    }
+  };
+
     const handleShareOrder = async () => {
         setIsSharing(true);
         try {
@@ -3990,8 +4005,8 @@ const App = () => {
         React.createElement("div", { className: "container" },
           React.createElement("div", { className: "header-content" },
             React.createElement("div", { className: "store-info" },
-                storeSettings.logo && React.createElement("img", { src: storeSettings.logo, alt: "Store Logo", className: "store-logo-img", onClick: () => { if (layout === 'gallery') window.location.reload(); } }),
-                React.createElement("h1", { className: "store-logo", onClick: () => { if (layout !== 'gallery') window.location.reload(); } }, storeSettings.name),
+                storeSettings.logo && React.createElement("img", { src: storeSettings.logo, alt: "Store Logo", className: "store-logo-img", onClick: handleAdminToggle }),
+                React.createElement("h1", { className: "store-logo", onClick: handleLayoutToggle }, storeSettings.name),
                 React.createElement("h1", { className: "store-name-mobile-gallery", onClick: () => window.location.reload() }, storeSettings.name)
             ),
             !isAdminView && (
@@ -4025,10 +4040,6 @@ const App = () => {
                   React.createElement("option", { value: "tr" }, "TR"),
                   React.createElement("option", { value: "ru" }, "RU")
                 )
-              ),
-              React.createElement("button", { className: "admin-toggle-btn", onClick: handleAdminToggle },
-                React.createElement(AdminIcon, null),
-                React.createElement("span", null, isAdminView ? t.viewCatalog : t.admin)
               ),
               !isAdminView && (
                 React.createElement("button", { className: "cart-button", onClick: () => setIsCartOpen(true) },
