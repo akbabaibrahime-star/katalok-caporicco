@@ -1,6 +1,4 @@
 
-
-
 import React, { useState, useMemo, useRef, forwardRef, useEffect, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
 
@@ -2636,13 +2634,14 @@ const ProductAlbumCard = ({ productGroup, onClick, t, itemSize, seriesNameToTemp
 };
 
 
-const ImageViewer = ({ images, currentIndex, onClose, t }) => {
+const ImageViewer = ({ images, currentIndex, onClose, t, onSelectOptions }) => {
     const [currentImageIndex, setCurrentImageIndex] = useState(currentIndex);
     const [zoom, setZoom] = useState(1);
     const [offset, setOffset] = useState({ x: 0, y: 0 });
     const [isDragging, setIsDragging] = useState(false);
     const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
     const [isLoading, setIsLoading] = useState(true);
+    const [isSharing, setIsSharing] = useState(false);
     const imageRef = useRef(null);
     const containerRef = useRef(null);
     const pinchStartDist = useRef(0);
@@ -2683,6 +2682,50 @@ const ImageViewer = ({ images, currentIndex, onClose, t }) => {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [handleNavigate, onClose]);
 
+    const handleShareImage = async () => {
+        if (!navigator.share) {
+            alert('Sharing is not supported on this browser.');
+            return;
+        }
+        setIsSharing(true);
+        try {
+            const currentImage = images[currentImageIndex];
+            const imageUrl = getTransformedImageUrl(currentImage.imageUrl, { width: 1024, height: 1024, resize: 'contain', quality: 90 });
+            
+            const response = await fetch(imageUrl);
+            const blob = await response.blob();
+            const file = new File([blob], `${currentImage.product.code}.png`, { type: 'image/png' });
+
+            const shareData = {
+                title: `${currentImage.product.name} - ${currentImage.product.code}`,
+                text: `${currentImage.product.name} (${currentImage.product.code}) - ${currentImage.colorName}`,
+                files: [file],
+            };
+            
+            if (navigator.canShare && navigator.canShare(shareData)) {
+                await navigator.share(shareData);
+            } else {
+                 await navigator.share({
+                    title: shareData.title,
+                    text: shareData.text,
+                    url: window.location.href
+                 });
+            }
+        } catch (error) {
+            if (error.name !== 'AbortError') {
+                console.error('Error sharing:', error);
+                alert('Could not share the image.');
+            }
+        } finally {
+            setIsSharing(false);
+        }
+    };
+
+    const handleAddToCartClick = () => {
+        const currentImage = images[currentImageIndex];
+        onSelectOptions(currentImage.product, currentImage);
+        onClose();
+    };
     const clampOffset = useCallback((newOffset, currentZoom) => {
         if (!imageRef.current || !containerRef.current || currentZoom <= 1) {
             return { x: 0, y: 0 };
@@ -2842,11 +2885,30 @@ const ImageViewer = ({ images, currentIndex, onClose, t }) => {
 
     return (
         React.createElement("div", { className: "image-viewer-overlay", onClick: onClose },
-            React.createElement("button", { className: "image-viewer-close", onClick: onClose, "aria-label": "Close viewer" }, React.createElement(XIcon, null)),
-            
-            React.createElement("button", { className: "image-viewer-nav prev", onClick: (e) => { e.stopPropagation(); handleNavigate('prev'); }, "aria-label": "Previous image" },
-                React.createElement(ChevronLeftIcon, null)
+            React.createElement("div", { className: "image-viewer-top-controls" },
+                React.createElement("button", { 
+                    className: "image-viewer-btn share-btn", 
+                    onClick: (e) => { e.stopPropagation(); handleShareImage(); }, 
+                    disabled: isSharing, 
+                    "aria-label": "Share image" 
+                }, React.createElement(ShareIcon, null)),
+                React.createElement("button", { 
+                    className: "image-viewer-btn close-btn", 
+                    onClick: onClose, 
+                    "aria-label": "Close viewer" 
+                }, React.createElement(XIcon, null)),
+                React.createElement("button", { 
+                    className: "image-viewer-btn add-to-cart-btn", 
+                    onClick: (e) => { e.stopPropagation(); handleAddToCartClick(); }, 
+                    "aria-label": "Add to cart" 
+                }, React.createElement(CartPlusIcon, null))
             ),
+            
+            React.createElement("button", { 
+                className: "image-viewer-btn image-viewer-nav prev", 
+                onClick: (e) => { e.stopPropagation(); handleNavigate('prev'); }, 
+                "aria-label": "Previous image" 
+            }, React.createElement(ChevronLeftIcon, null)),
             
             React.createElement("div", {
                 ref: containerRef,
@@ -2875,7 +2937,7 @@ const ImageViewer = ({ images, currentIndex, onClose, t }) => {
                 })
             ),
 
-             React.createElement("button", { className: "image-viewer-nav next", onClick: (e) => { e.stopPropagation(); handleNavigate('next'); }, "aria-label": "Next image" },
+             React.createElement("button", { className: "image-viewer-btn image-viewer-nav next", onClick: (e) => { e.stopPropagation(); handleNavigate('next'); }, "aria-label": "Next image" },
                 React.createElement(ChevronRightIcon, null)
             ),
 
@@ -2886,7 +2948,7 @@ const ImageViewer = ({ images, currentIndex, onClose, t }) => {
     );
 };
 
-const GalleryView = ({ variants, onBulkAddToCart, onOpenFilters, t, activeFilters, seriesNameToTemplateMap, storeSettings }) => {
+const GalleryView = ({ variants, onBulkAddToCart, onOpenFilters, t, activeFilters, seriesNameToTemplateMap, storeSettings, onSelectOptions }) => {
     const [itemSize, setItemSize] = useState(220);
     useEffect(() => {
         setItemSize(window.innerWidth <= 768 ? 80 : 220);
@@ -3152,7 +3214,8 @@ const GalleryView = ({ variants, onBulkAddToCart, onOpenFilters, t, activeFilter
                 images: displayedVariantsForViewer,
                 currentIndex: viewerIndex,
                 onClose: () => setViewerIndex(null),
-                t: t
+                t: t,
+                onSelectOptions: onSelectOptions
             }),
             React.createElement("div", { className: "mobile-gallery-footer" },
                 React.createElement("p", null, storeSettings.name),
@@ -3920,7 +3983,8 @@ const App = () => {
                   activeFilters,
                   seriesNameToTemplateMap,
                   t,
-                  storeSettings: storeSettings
+                  storeSettings: storeSettings,
+                  onSelectOptions: handleOpenModal
               })
             ) : (
                 React.createElement("div", { className: `product-grid layout-${layout}` },
