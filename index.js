@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo, useRef, forwardRef, useEffect, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
 
@@ -463,7 +464,7 @@ const getTransformedImageUrl = (
     url.searchParams.set('width', String(options.width));
     url.searchParams.set('height', String(options.height));
     url.searchParams.set('resize', options.resize || 'cover');
-    url.searchParams.set('quality', String(options.quality || 80));
+    url.searchParams.set('quality', String(options.quality || 90));
     
     return url.toString();
   } catch (error) {
@@ -2572,7 +2573,6 @@ const ProductAlbumCard = ({ productGroup, onClick, t, seriesNameToTemplateMap })
     const { product, variants } = productGroup;
     const coverImage = variants[0]?.imageUrl;
     const variantCount = variants.length;
-    const imageRenderSize = 240;
 
     const seriesInfo = useMemo(() => {
         const uniqueSeries = new Map();
@@ -2616,11 +2616,28 @@ const ProductAlbumCard = ({ productGroup, onClick, t, seriesNameToTemplateMap })
         
         return finalInfo.sort((a, b) => a.numericUnitPrice - b.numericUnitPrice);
     }, [variants, seriesNameToTemplateMap]);
+    
+    const imageSizesForSrcset = [80, 160, 240, 320];
+    const srcSet = coverImage
+        ? imageSizesForSrcset
+            .map(width => `${getTransformedImageUrl(coverImage, { width, height: width, resize: 'cover' })} ${width}w`)
+            .join(', ')
+        : undefined;
+    const defaultSrc = coverImage
+        ? getTransformedImageUrl(coverImage, { width: 80, height: 80, resize: 'cover' })
+        : undefined;
 
     return (
         React.createElement("div", { className: "product-album-card", onClick: onClick },
             React.createElement("div", { className: "album-card-image-container" },
-                React.createElement("img", { src: getTransformedImageUrl(coverImage, { width: imageRenderSize, height: imageRenderSize }), alt: product.name })
+                React.createElement("img", {
+                    src: defaultSrc,
+                    srcSet: srcSet,
+                    sizes: "80px",
+                    alt: product.name,
+                    loading: "lazy",
+                    crossOrigin: "anonymous"
+                })
             ),
             React.createElement("div", { className: "album-card-info" },
                 React.createElement("p", { className: "album-card-code" }, `${product.name} - ${product.code}`),
@@ -2666,12 +2683,12 @@ const ImageViewer = ({ images, currentIndex, onClose, t, onSelectOptions }) => {
 
         if (nextImage) {
             const nextImageLoader = new Image();
-            nextImageLoader.src = getTransformedImageUrl(nextImage.imageUrl, {width: 1200, height: 1200, resize: 'contain', quality: 90});
+            nextImageLoader.src = getTransformedImageUrl(nextImage.imageUrl, {width: 2048, height: 2048, resize: 'contain', quality: 95});
         }
         
         if (prevImage) {
             const prevImageLoader = new Image();
-            prevImageLoader.src = getTransformedImageUrl(prevImage.imageUrl, {width: 1200, height: 1200, resize: 'contain', quality: 90});
+            prevImageLoader.src = getTransformedImageUrl(prevImage.imageUrl, {width: 2048, height: 2048, resize: 'contain', quality: 95});
         }
 
     }, [currentImageIndex, images]);
@@ -2752,6 +2769,7 @@ const ImageViewer = ({ images, currentIndex, onClose, t, onSelectOptions }) => {
         onSelectOptions(currentImage.product, currentImage);
         onClose();
     };
+
     const clampOffset = useCallback((newOffset, currentZoom) => {
         if (!imageRef.current || !containerRef.current || currentZoom <= 1) {
             return { x: 0, y: 0 };
@@ -2759,51 +2777,39 @@ const ImageViewer = ({ images, currentIndex, onClose, t, onSelectOptions }) => {
         const imageNode = imageRef.current;
         const containerNode = containerRef.current;
 
-        const imageRect = imageNode.getBoundingClientRect();
-        const containerRect = containerNode.getBoundingClientRect();
+        const imageRenderedWidth = imageNode.offsetWidth;
+        const imageRenderedHeight = imageNode.offsetHeight;
+        const containerWidth = containerNode.offsetWidth;
+        const containerHeight = containerNode.offsetHeight;
 
-        const baseImageWidth = imageRect.width / zoom;
-        const baseImageHeight = imageRect.height / zoom;
+        const scaledWidth = imageRenderedWidth * currentZoom;
+        const scaledHeight = imageRenderedHeight * currentZoom;
+
+        const overhangX = Math.max(0, (scaledWidth - containerWidth) / 2);
+        const overhangY = Math.max(0, (scaledHeight - containerHeight) / 2);
         
-        const zoomedImageWidth = baseImageWidth * currentZoom;
-        const zoomedImageHeight = baseImageHeight * currentZoom;
-
-        const overhangX = Math.max(0, (zoomedImageWidth - containerRect.width) / 2);
-        const overhangY = Math.max(0, (zoomedImageHeight - containerRect.height) / 2);
-
         const maxOffsetX = overhangX / currentZoom;
         const maxOffsetY = overhangY / currentZoom;
-        
+
         return {
             x: Math.max(-maxOffsetX, Math.min(maxOffsetX, newOffset.x)),
             y: Math.max(-maxOffsetY, Math.min(maxOffsetY, newOffset.y)),
         };
-    }, [zoom]);
+    }, []);
 
     const handleWheel = useCallback((e) => {
         const zoomFactor = 1.1;
         const newZoom = e.deltaY < 0 ? zoom * zoomFactor : zoom / zoomFactor;
         const clampedZoom = Math.max(1, Math.min(newZoom, 5));
         
-        if (clampedZoom === zoom || !containerRef.current) return;
-
-        const rect = containerRef.current.getBoundingClientRect();
-        const mouseX = e.clientX - rect.left;
-        const mouseY = e.clientY - rect.top;
-
-        const imageX = (mouseX - rect.width / 2) / zoom - offset.x;
-        const imageY = (mouseY - rect.height / 2) / zoom - offset.y;
-        
-        const newOffsetX = offset.x + imageX * (1 - clampedZoom / zoom);
-        const newOffsetY = offset.y + imageY * (1 - clampedZoom / zoom);
-
         setZoom(clampedZoom);
+        
         if (clampedZoom <= 1) {
-             setOffset({x:0, y:0});
+            setOffset({x:0, y:0});
         } else {
-             setOffset(clampOffset({ x: newOffsetX, y: newOffsetY }, clampedZoom));
+            setOffset(currentOffset => clampOffset(currentOffset, clampedZoom));
         }
-    }, [zoom, offset, clampOffset]);
+    }, [zoom, clampOffset]);
     
     const handleMouseDown = (e) => {
         if (zoom <= 1) return;
@@ -2857,6 +2863,11 @@ const ImageViewer = ({ images, currentIndex, onClose, t, onSelectOptions }) => {
               const zoomFactor = newDist / pinchStartDist.current;
               const newZoom = Math.max(1, Math.min(zoom * zoomFactor, 5));
               setZoom(newZoom);
+               if (newZoom <= 1) {
+                  setOffset({x: 0, y: 0});
+              } else {
+                  setOffset(currentOffset => clampOffset(currentOffset, newZoom));
+              }
             }
             pinchStartDist.current = newDist;
         } else if (e.touches.length === 1) {
@@ -2894,8 +2905,14 @@ const ImageViewer = ({ images, currentIndex, onClose, t, onSelectOptions }) => {
         const containerNode = containerRef.current;
         if (!containerNode) return;
 
-        const wheelHandler = e => handleWheel(e);
-        const touchMoveHandler = e => handleTouchMove(e);
+        const wheelHandler = e => {
+            e.preventDefault();
+            handleWheel(e);
+        };
+        const touchMoveHandler = e => {
+            e.preventDefault();
+            handleTouchMove(e);
+        };
 
         containerNode.addEventListener('wheel', wheelHandler, { passive: false });
         containerNode.addEventListener('touchmove', touchMoveHandler, { passive: false });
@@ -2951,7 +2968,7 @@ const ImageViewer = ({ images, currentIndex, onClose, t, onSelectOptions }) => {
                 isLoading && React.createElement("div", { className: "viewer-loader" }),
                 React.createElement("img", {
                     ref: imageRef,
-                    src: getTransformedImageUrl(image.imageUrl, {width: 1200, height: 1200, resize: 'contain', quality: 90}),
+                    src: getTransformedImageUrl(image.imageUrl, {width: 2048, height: 2048, resize: 'contain', quality: 95}),
                     alt: `${image.product.name} - ${image.colorName}`,
                     className: `image-viewer-content ${isPannable ? 'pannable' : ''} ${isDragging ? 'panning' : ''} ${isLoading ? 'loading' : ''}`,
                     style: { 
