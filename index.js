@@ -166,6 +166,9 @@ const translations = {
     allRightsReserved: "All rights reserved.",
     discount: "Discount",
     discountedProducts: "Discounted Products",
+    a2hsTitle: "Install {appName} App",
+    a2hsDescription: "Add to your home screen for a better experience.",
+    a2hsInstall: "Install",
   },
   tr: {
     searchPlaceholder: "Ürün adı veya koduyla ara...",
@@ -309,6 +312,9 @@ const translations = {
     allRightsReserved: "Tüm hakları saklıdır.",
     discount: "İndirim",
     discountedProducts: "İndirimli Ürünler",
+    a2hsTitle: "{appName} Uygulamasını Yükle",
+    a2hsDescription: "Daha iyi bir deneyim için ana ekranınıza ekleyin.",
+    a2hsInstall: "Yükle",
   },
   ru: {
     searchPlaceholder: "Поиск по названию или коду товара...",
@@ -452,6 +458,9 @@ const translations = {
     allRightsReserved: "Все права защищены.",
     discount: "Скидка",
     discountedProducts: "Товары со скидкой",
+    a2hsTitle: "Установить {appName}",
+    a2hsDescription: "Добавьте на главный экран для удобства.",
+    a2hsInstall: "Установить",
   },
 };
 
@@ -3649,19 +3658,18 @@ const ShortsPlayer = ({ isOpen, shortsItems, activeShortId, onClose }) => {
 // --- ADD TO HOME SCREEN BANNER ---
 const AddToHomeScreenBanner = ({ onInstall, onDismiss, storeSettings, t }) => {
     return (
-        React.createElement("div", { className: "a2hs-banner" },
-            React.createElement("img", { src: "/icon-192x192.png", alt: "App Icon", className: "a2hs-icon" }),
+        React.createElement("div", { className: "add-to-home-screen-banner" },
+            React.createElement("button", { className: "a2hs-dismiss-btn", onClick: onDismiss, "aria-label": "Dismiss" }, "×"),
+            React.createElement("img", { src: "/icon-192x192.png", alt: "App Icon", className: "a2hs-logo" }),
             React.createElement("div", { className: "a2hs-text" },
                 React.createElement("strong", null, t.a2hsTitle.replace('{appName}', storeSettings.name)),
                 React.createElement("span", null, t.a2hsDescription)
             ),
-            React.createElement("div", { className: "a2hs-actions" },
-                React.createElement("button", { className: "a2hs-dismiss-btn", onClick: onDismiss }, t.a2hsLater),
-                React.createElement("button", { className: "a2hs-install-btn", onClick: onInstall }, t.a2hsInstall)
-            )
+            React.createElement("button", { className: "a2hs-install-btn", onClick: onInstall }, t.a2hsInstall)
         )
     );
 };
+
 
 // --- MAIN APP COMPONENT ---
 const App = () => {
@@ -3703,6 +3711,8 @@ const App = () => {
   const [isSharing, setIsSharing] = useState(false);
   const [isDownloadingExcel, setIsDownloadingExcel] = useState(false);
   const [layout, setLayout] = useState('double');
+  const [installPrompt, setInstallPrompt] = useState(null);
+  const [isA2hsBannerVisible, setIsA2hsBannerVisible] = useState(false);
   useEffect(() => {
     setLayout(window.innerWidth <= 768 ? 'gallery' : 'double');
   }, []);
@@ -3871,6 +3881,41 @@ const App = () => {
              document.body.classList.remove('gallery-view-mobile');
         };
     }, [layout]);
+    
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e) => {
+      e.preventDefault();
+      setInstallPrompt(e);
+      if (!localStorage.getItem('a2hsDismissed')) {
+          setIsA2hsBannerVisible(true);
+      }
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  const handleInstallClick = () => {
+      if (!installPrompt) return;
+      installPrompt.prompt();
+      installPrompt.userChoice.then((choiceResult) => {
+          if (choiceResult.outcome === 'accepted') {
+              console.log('User accepted the A2HS prompt');
+          } else {
+              console.log('User dismissed the A2HS prompt');
+          }
+          setIsA2hsBannerVisible(false);
+          setInstallPrompt(null);
+      });
+  };
+
+  const handleDismissBanner = () => {
+      localStorage.setItem('a2hsDismissed', 'true');
+      setIsA2hsBannerVisible(false);
+  };
 
   const t = useMemo(() => translations[language], [language]);
   
@@ -4315,6 +4360,12 @@ const App = () => {
           shortsItems: shortsItems,
           activeShortId: activeShortId,
           onClose: () => setIsShortsPlayerOpen(false)
+      }),
+      isA2hsBannerVisible && installPrompt && React.createElement(AddToHomeScreenBanner, {
+        onInstall: handleInstallClick,
+        onDismiss: handleDismissBanner,
+        storeSettings: storeSettings,
+        t: t
       })
     )
   );
