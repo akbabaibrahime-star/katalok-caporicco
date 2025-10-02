@@ -1771,7 +1771,7 @@ main {
 
 .discounted-price {
     background-color: var(--danger-color);
-    color: white !important;
+    color: #dc3545 !important;
     padding: 2px 5px !important;
     border-radius: 3px !important;
     font-weight: 600 !important;
