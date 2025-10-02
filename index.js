@@ -3668,7 +3668,7 @@ const AddToHomeScreenBanner = ({ onInstall, onDismiss, storeSettings, t }) => {
     return (
         React.createElement("div", { className: "add-to-home-screen-banner" },
             React.createElement("button", { className: "a2hs-dismiss-btn", onClick: onDismiss, "aria-label": "Dismiss" }, "×"),
-            React.createElement("img", { src: "/icon-192x192.png", alt: "App Icon", className: "a2hs-logo" }),
+            React.createElement("img", { src: storeSettings.logo || "/icon-192x192.png", alt: "App Icon", className: "a2hs-logo" }),
             React.createElement("div", { className: "a2hs-text" },
                 React.createElement("strong", null, t.a2hsTitle.replace('{appName}', storeSettings.name)),
                 React.createElement("span", null, t.a2hsDescription)
