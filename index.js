@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useMemo, useRef, forwardRef, useEffect, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
 
@@ -163,6 +164,8 @@ const translations = {
     searchByProductNameOrCode: "Search by product name or code...",
     videoUrlVariant: "Video URL (Variant)",
     allRightsReserved: "All rights reserved.",
+    discount: "Discount",
+    discountedProducts: "Discounted Products",
   },
   tr: {
     searchPlaceholder: "Ürün adı veya koduyla ara...",
@@ -304,6 +307,8 @@ const translations = {
     searchByProductNameOrCode: "Ürün adı veya koduyla ara...",
     videoUrlVariant: "Video URL (Varyant)",
     allRightsReserved: "Tüm hakları saklıdır.",
+    discount: "İndirim",
+    discountedProducts: "İndirimli Ürünler",
   },
   ru: {
     searchPlaceholder: "Поиск по названию или коду товара...",
@@ -445,6 +450,8 @@ const translations = {
     searchByProductNameOrCode: "Поиск по названию или коду товара...",
     videoUrlVariant: "URL видео (вариант)",
     allRightsReserved: "Все права защищены.",
+    discount: "Скидка",
+    discountedProducts: "Товары со скидкой",
   },
 };
 
@@ -2383,8 +2390,12 @@ const FilterSidebar = ({ isOpen, onClose, products, activeFilters, setActiveFilt
         setActiveFilters((prev) => ({ ...prev, [category]: Array.from(newCategoryFilters) }));
     };
 
+    const handleDiscountToggle = () => {
+        setActiveFilters(prev => ({ ...prev, discounted: !prev.discounted }));
+    };
+
     const resetFilters = () => {
-        setActiveFilters({ seasons: [], collarTypes: [], seriesNames: [], genders: [] });
+        setActiveFilters({ seasons: [], collarTypes: [], seriesNames: [], genders: [], discounted: false });
     };
 
     return (
@@ -2396,6 +2407,18 @@ const FilterSidebar = ({ isOpen, onClose, products, activeFilters, setActiveFilt
                     React.createElement("button", { className: "close-cart-btn", onClick: onClose, "aria-label": "Close filters" }, "×")
                 ),
                 React.createElement("div", { className: "cart-body" },
+                    React.createElement("div", { className: "filter-section" },
+                        React.createElement("h3", null, t.discount),
+                        React.createElement("div", { className: "filter-option" },
+                            React.createElement("input", {
+                                type: "checkbox",
+                                id: "discount-filter",
+                                checked: activeFilters.discounted || false,
+                                onChange: handleDiscountToggle
+                            }),
+                            React.createElement("label", { htmlFor: "discount-filter" }, t.discountedProducts)
+                        )
+                    ),
                     React.createElement("div", { className: "filter-section" },
                         React.createElement("h3", null, t.season),
                         filterOptions.seasons.map(season => (
@@ -3630,7 +3653,7 @@ const App = () => {
   const [passwordInput, setPasswordInput] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [activeFilters, setActiveFilters] = useState({ seasons: [], collarTypes: [], seriesNames: [], genders: [] });
+  const [activeFilters, setActiveFilters] = useState({ seasons: [], collarTypes: [], seriesNames: [], genders: [], discounted: false });
   const [isMobileSearchVisible, setIsMobileSearchVisible] = useState(false);
   const [isShortsPlayerOpen, setIsShortsPlayerOpen] = useState(false);
   const [activeShortId, setActiveShortId] = useState(null);
@@ -3820,7 +3843,7 @@ const App = () => {
         );
     }
     
-    const hasActiveFilters = Object.values(activeFilters).some(arr => arr.length > 0);
+    const hasActiveFilters = Object.values(activeFilters).some(arr => Array.isArray(arr) && arr.length > 0) || activeFilters.discounted;
 
     if (!hasActiveFilters) {
       return productsToFilter;
@@ -3830,12 +3853,13 @@ const App = () => {
       const seasonMatch = activeFilters.seasons.length === 0 || activeFilters.seasons.includes(product.season);
       const collarMatch = activeFilters.collarTypes.length === 0 || activeFilters.collarTypes.includes(product.collarType);
       const genderMatch = activeFilters.genders.length === 0 || activeFilters.genders.includes(product.gender);
+      const discountMatch = !activeFilters.discounted || (product.discountPercentage && product.discountPercentage > 0);
 
       const seriesMatch = activeFilters.seriesNames.length === 0 || product.variants.some(v =>
         v.series.some(s => activeFilters.seriesNames.includes(s.name))
       );
 
-      return seasonMatch && collarMatch && seriesMatch && genderMatch;
+      return seasonMatch && collarMatch && seriesMatch && genderMatch && discountMatch;
     });
   }, [products, searchTerm, activeFilters]);
 
