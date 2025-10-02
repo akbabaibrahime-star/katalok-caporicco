@@ -3702,9 +3702,21 @@ const App = () => {
   const [storeSettings, setStoreSettings] = useState({ name: "Loading...", logo: null, brand: '', manufacturerTitle: '', origin: '' });
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [language, setLanguage] = useState(
-    () => (localStorage.getItem('appLanguage')) || 'en'
-  );
+  const [language, setLanguage] = useState(() => {
+    const savedLanguage = localStorage.getItem('appLanguage');
+    const supportedLanguages = ['en', 'tr', 'ru'];
+
+    if (savedLanguage && supportedLanguages.includes(savedLanguage)) {
+      return savedLanguage;
+    }
+
+    const browserLang = navigator.language.split('-')[0];
+    if (supportedLanguages.includes(browserLang)) {
+      return browserLang;
+    }
+
+    return 'en'; // Default language
+  });
   const [cartItems, setCartItems] = useState(() => {
     try {
       const savedCart = localStorage.getItem('cartItems');
