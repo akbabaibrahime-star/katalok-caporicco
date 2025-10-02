@@ -658,15 +658,16 @@ const SeriesSelectionModal = ({ isOpen, onClose, productInfo, productVariant, on
                                         ),
                                         unitPrice !== null && (
                                             React.createElement("p", { className: "series-unit-price" },
-                                                `(${hasDiscount ? 
+                                                "(",
+                                                hasDiscount ? 
                                                     React.createElement(React.Fragment, null,
                                                         React.createElement("span", { className: "original-price" }, formatCurrency(unitPrice, series.currency)),
                                                         ' ',
                                                         React.createElement("span", null, formatCurrency(discountedUnitPrice, series.currency))
                                                     )
                                                 : 
-                                                    React.createElement("span", null, formatCurrency(unitPrice, series.currency))
-                                                } ${t.perPiece})`
+                                                    React.createElement("span", null, formatCurrency(unitPrice, series.currency)),
+                                                ` ${t.perPiece})`
                                             )
                                         )
                                     ),
@@ -769,11 +770,13 @@ const CartSidebar = ({ isOpen, onClose, cartItems, onRemoveItem, onUpdateQuantit
     const totals = useMemo(() => {
         return cartItems.reduce((acc, item) => {
             const { currency, price } = item.series;
+            const discount = item.discountPercentage || 0;
+            const discountedPrice = price * (1 - (discount / 100));
             const quantity = Number(item.quantity || 0);
             if (!acc[currency]) {
                 acc[currency] = 0;
             }
-            acc[currency] += price * quantity;
+            acc[currency] += discountedPrice * quantity;
             return acc;
         }, {});
     }, [cartItems]);
@@ -791,21 +794,37 @@ const CartSidebar = ({ isOpen, onClose, cartItems, onRemoveItem, onUpdateQuantit
                 React.createElement("p", { className: "cart-empty-message" }, t.emptyCart)
               ) : (
                 cartItems.map((item, index) => {
+                    const hasDiscount = item.discountPercentage && item.discountPercentage > 0;
+                    const seriesPrice = item.series.price;
+                    const discountedSeriesPrice = hasDiscount ? seriesPrice * (1 - (item.discountPercentage / 100)) : seriesPrice;
+
                     const units = getUnitsPerSeries(item.series.name);
-                    const unitPrice = units > 1 ? item.series.price / units : null;
+                    const unitPrice = units > 1 ? seriesPrice / units : null;
+                    const discountedUnitPrice = (unitPrice && hasDiscount) ? unitPrice * (1 - (item.discountPercentage / 100)) : unitPrice;
 
                     return (
                         React.createElement("div", { key: `${item.series.id}-${index}`, className: "cart-item" },
                             React.createElement("img", { src: getTransformedImageUrl(item.variant.imageUrl, { width: 160, height: 220 }), alt: item.variant.colorName, className: "cart-item-img", crossOrigin: "anonymous" }),
                             React.createElement("div", { className: "cart-item-details" },
                                 React.createElement("div", { className: "cart-item-description" },
-                                    React.createElement("p", null, item.productName),
+                                    React.createElement("p", null, 
+                                        item.productName,
+                                        hasDiscount && React.createElement("span", { className: "discount-tag", style: { marginLeft: '8px' } }, `%${item.discountPercentage}`)
+                                    ),
                                     React.createElement("p", null, item.productCode),
                                     React.createElement("p", null, item.variant.colorName),
                                     React.createElement("p", null, item.series.name),
                                     unitPrice !== null && (
                                         React.createElement("p", { className: "cart-item-unit-price" },
-                                            `(${formatCurrency(unitPrice, item.series.currency)} ${t.perPiece})`
+                                            "(",
+                                            hasDiscount ?
+                                            React.createElement(React.Fragment, null,
+                                                React.createElement("span", { className: "original-price" }, formatCurrency(unitPrice, item.series.currency)),
+                                                " ",
+                                                React.createElement("span", null, formatCurrency(discountedUnitPrice, item.series.currency))
+                                            ) :
+                                            React.createElement("span", null, formatCurrency(unitPrice, item.series.currency)),
+                                            ` ${t.perPiece})`
                                         )
                                     )
                                 ),
@@ -824,7 +843,11 @@ const CartSidebar = ({ isOpen, onClose, cartItems, onRemoveItem, onUpdateQuantit
                                     React.createElement("button", { onClick: () => onUpdateQuantity(item.series.id, Number(item.quantity || 0) + 1), "aria-label": "Increase quantity" }, React.createElement(PlusIcon, null)),
                                     ),
                                     React.createElement("div", { className: "cart-item-line-total" },
-                                    formatCurrency(Number(item.quantity || 0) * item.series.price, item.series.currency)
+                                        hasDiscount && React.createElement("span", {
+                                            className: "original-price",
+                                            style: { display: 'block', fontSize: '0.8em', fontWeight: '400' }
+                                        }, formatCurrency(Number(item.quantity || 0) * seriesPrice, item.series.currency)),
+                                        formatCurrency(Number(item.quantity || 0) * discountedSeriesPrice, item.series.currency)
                                     ),
                                     React.createElement("button", { className: "remove-item-btn", onClick: () => onRemoveItem(item.series.id), "aria-label": "Remove item" },
                                     React.createElement(Trash2Icon, null)
@@ -896,27 +919,44 @@ const OrderShareImage = forwardRef(({ cartItems, totals, t, storeSettings, cartS
             ),
             React.createElement("div", { className: "order-share-body" },
                 cartItems.map((item, index) => {
+                    const hasDiscount = item.discountPercentage && item.discountPercentage > 0;
+                    const seriesPrice = item.series.price;
+                    const discountedSeriesPrice = hasDiscount ? seriesPrice * (1 - (item.discountPercentage / 100)) : seriesPrice;
+
                     const units = getUnitsPerSeries(item.series.name);
-                    const unitPrice = units > 1 ? item.series.price / units : null;
+                    const unitPrice = units > 1 ? seriesPrice / units : null;
+                    const discountedUnitPrice = (unitPrice && hasDiscount) ? unitPrice * (1 - (item.discountPercentage / 100)) : unitPrice;
 
                     return (
                         React.createElement("div", { key: `${item.series.id}-${index}`, className: "order-share-item" },
                             React.createElement("img", { src: getTransformedImageUrl(item.variant.imageUrl, { width: 120, height: 120 }), alt: item.variant.colorName, className: "order-share-img", crossOrigin: "anonymous" }),
                             React.createElement("div", { className: "order-share-details" },
                                 React.createElement("p", { className: "order-share-pname" },
-                                    item.productName, " ", React.createElement("span", { className: "order-share-pcode" }, `(${item.productCode})`)
+                                    item.productName, " ", React.createElement("span", { className: "order-share-pcode" }, `(${item.productCode})`),
+                                    hasDiscount && React.createElement("span", { className: "discount-tag", style: { marginLeft: '8px', fontSize: '0.7rem'} }, `%${item.discountPercentage}`)
                                 ),
                                 React.createElement("p", { className: "order-share-pseries" },
                                     `${item.variant.colorName} - ${item.series.name}`,
                                     unitPrice !== null && (
                                         React.createElement("span", { className: "order-share-unit-price" },
-                                            ` (${formatCurrency(unitPrice, item.series.currency)}${t.perPiece})`
+                                            " (",
+                                            hasDiscount ?
+                                            React.createElement(React.Fragment, null,
+                                                React.createElement("span", { className: "original-price" }, formatCurrency(unitPrice, item.series.currency)),
+                                                " / ",
+                                                React.createElement("span", null, formatCurrency(discountedUnitPrice, item.series.currency))
+                                            ) :
+                                            formatCurrency(unitPrice, item.series.currency),
+                                            `${t.perPiece})`
                                         )
                                     )
                                 )
                             ),
                             React.createElement("div", { className: "order-share-pricing" },
-                                React.createElement("p", { className: "price" }, formatCurrency(Number(item.quantity || 0) * item.series.price, item.series.currency)),
+                                React.createElement("p", { className: "price" }, 
+                                    hasDiscount && React.createElement("span", { className: "original-price", style: { display: 'block', fontSize: '0.8em', fontWeight: '400' } }, formatCurrency(Number(item.quantity || 0) * seriesPrice, item.series.currency)),
+                                    formatCurrency(Number(item.quantity || 0) * discountedSeriesPrice, item.series.currency)
+                                ),
                                 React.createElement("p", { className: "qty" }, `Qty: ${item.quantity}`)
                             )
                         )
@@ -3606,6 +3646,23 @@ const ShortsPlayer = ({ isOpen, shortsItems, activeShortId, onClose }) => {
     );
 };
 
+// --- ADD TO HOME SCREEN BANNER ---
+const AddToHomeScreenBanner = ({ onInstall, onDismiss, storeSettings, t }) => {
+    return (
+        React.createElement("div", { className: "a2hs-banner" },
+            React.createElement("img", { src: "/icon-192x192.png", alt: "App Icon", className: "a2hs-icon" }),
+            React.createElement("div", { className: "a2hs-text" },
+                React.createElement("strong", null, t.a2hsTitle.replace('{appName}', storeSettings.name)),
+                React.createElement("span", null, t.a2hsDescription)
+            ),
+            React.createElement("div", { className: "a2hs-actions" },
+                React.createElement("button", { className: "a2hs-dismiss-btn", onClick: onDismiss }, t.a2hsLater),
+                React.createElement("button", { className: "a2hs-install-btn", onClick: onInstall }, t.a2hsInstall)
+            )
+        )
+    );
+};
+
 // --- MAIN APP COMPONENT ---
 const App = () => {
   const [products, setProducts] = useState([]);
@@ -3905,6 +3962,7 @@ const App = () => {
         return [...prevItems, { 
             productName: product.name,
             productCode: product.code,
+            discountPercentage: product.discountPercentage || 0,
             variant: { id: variant.id, colorName: variant.colorName, imageUrl: variant.imageUrl },
             series, 
             quantity 
@@ -3925,6 +3983,7 @@ const App = () => {
                      newCartItems.push({
                          productName: itemToAdd.product.name,
                          productCode: itemToAdd.product.code,
+                         discountPercentage: itemToAdd.product.discountPercentage || 0,
                          variant: { id: itemToAdd.variant.id, colorName: itemToAdd.variant.colorName, imageUrl: itemToAdd.variant.imageUrl },
                          series: itemToAdd.series,
                          quantity: itemToAdd.quantity
@@ -3990,9 +4049,11 @@ const App = () => {
         try {
             const totals = cartItems.reduce((acc, item) => {
               const { currency, price } = item.series;
+              const discount = item.discountPercentage || 0;
+              const discountedPrice = price * (1 - (discount / 100));
               const quantity = Number(item.quantity || 0);
               if (!acc[currency]) acc[currency] = 0;
-              acc[currency] += price * quantity;
+              acc[currency] += discountedPrice * quantity;
               return acc;
             }, {});
             
