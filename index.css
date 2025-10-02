@@ -2555,3 +2555,146 @@ main {
     color: var(--text-color);
     font-size: 0.9rem;
 }
+
+/* Add to Home Screen Banner */
+.add-to-home-screen-banner {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 40px);
+  max-width: 480px;
+  background-color: var(--surface-color);
+  color: var(--text-color);
+  border-radius: var(--border-radius);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  z-index: 1001;
+  animation: slideUpFadeIn 0.5s ease-out forwards;
+}
+
+.a2hs-logo {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+
+.a2hs-text {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  margin-right: 12px;
+}
+
+.a2hs-text strong {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.a2hs-text span {
+  font-size: 0.85rem;
+  color: var(--secondary-color);
+}
+
+.a2hs-install-btn {
+  padding: 8px 16px;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius);
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color var(--transition-speed);
+}
+.a2hs-install-btn:hover {
+    background-color: #0056b3;
+}
+
+.a2hs-dismiss-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: transparent;
+  border: none;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--secondary-color);
+  cursor: pointer;
+  padding: 4px;
+}
+
+/* --- Mobile / Responsive --- */
+@media (max-width: 768px) {
+    .container {
+        padding: 0 10px;
+    }
+    .desktop-search-bar, .language-switcher, .admin-toggle-btn > span, .view-toggle {
+        display: none;
+    }
+    .header-controls {
+        gap: 8px;
+    }
+    .store-logo {
+        font-size: 20px;
+    }
+    .mobile-search-toggle {
+        display: block;
+        background: none;
+        border: none;
+        padding: 8px;
+        cursor: pointer;
+    }
+    .header-content.mobile-search-bar-active .store-info,
+    .header-content.mobile-search-bar-active .header-controls {
+        display: none;
+    }
+    .header-content.mobile-search-bar-active {
+        width: 100%;
+        gap: 8px;
+    }
+    .mobile-search-back-btn {
+        background: none;
+        border: none;
+        padding: 8px;
+        cursor: pointer;
+    }
+    .header-content.mobile-search-bar-active .search-input-wrapper {
+        display: flex;
+        flex-grow: 1;
+        position: relative;
+        align-items: center;
+    }
+    .header-content.mobile-search-bar-active input {
+        width: 100%;
+        padding-left: 35px;
+        height: 40px;
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius);
+    }
+    
+    .add-to-home-screen-banner {
+        bottom: 10px;
+        width: calc(100% - 20px);
+        padding: 10px;
+    }
+    .a2hs-logo {
+        width: 40px;
+        height: 40px;
+    }
+    .a2hs-text strong {
+        font-size: 0.9rem;
+    }
+    .a2hs-text span {
+        font-size: 0.8rem;
+    }
+    .a2hs-install-btn {
+        padding: 6px 12px;
+        font-size: 0.9rem;
+    }
+
+}
