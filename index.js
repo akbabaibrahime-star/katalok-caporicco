@@ -1,6 +1,5 @@
 
 
-
 import React, { useState, useMemo, useRef, forwardRef, useEffect, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
 
@@ -529,12 +528,15 @@ const getTranslationKey = (str) => {
 };
 
 const formatCurrency = (amount, currency) => {
+    const numAmount = parseFloat(String(amount));
+    const safeAmount = isNaN(numAmount) ? 0 : numAmount;
+
     const options = {
         'USD': { symbol: '$', format: (v) => `$${v.toFixed(2)}` },
         'EUR': { symbol: '€', format: (v) => `€${v.toFixed(2)}` },
         'TRY': { symbol: '₺', format: (v) => `₺${v.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
     };
-    return options[currency]?.format(amount) || `${amount}`;
+    return options[currency]?.format(safeAmount) || `${safeAmount}`;
 };
 
 const getUnitsPerSeries = (seriesName) => {
@@ -558,7 +560,7 @@ const getUnitsPerSeries = (seriesName) => {
     
     if (sizeDistributionMatches && sizeDistributionMatches.length > 0) {
         // Check if the string is composed *only* of these kinds of tokens.
-        const nonMatchPart = seriesName.replace(distributionRegex, '').replace(/[\s-]/g, '');
+        const nonMatchPart = seriesName.replace(distributionRegex, '').replace(/[\s,-]/g, '');
         if (nonMatchPart.length === 0) {
             // All parts of the string look like "2S" or "2XL". Now we differentiate.
             const total = sizeDistributionMatches.reduce((sum, match) => {
@@ -581,7 +583,7 @@ const getUnitsPerSeries = (seriesName) => {
 
 
     // Priority 3: Count common size abbreviations if no other pattern matched.
-    const sizes = seriesName.match(/\b(XS|S|M|L|XL|XXL|2XL|3XL|4XL|5XL)\b/gi);
+    const sizes = seriesName.match(/\b(XS|S|M|L|XL|XXL|2XL|3XL|4XL|5XL|6XL|7XL|8XL)\b/gi);
     if (sizes && sizes.length > 0) {
         return sizes.length;
     }
@@ -851,10 +853,7 @@ const CartSidebar = ({ isOpen, onClose, cartItems, onRemoveItem, onUpdateQuantit
                                     React.createElement("input", {
                                         type: "number",
                                         value: item.quantity,
-                                        onChange: (e) => {
-                                            const val = Number.parseInt(e.target.value, 10);
-                                            if (!isNaN(val)) onUpdateQuantity(item.series.id, val);
-                                        },
+                                        onChange: (e) => onUpdateQuantity(item.series.id, e.target.value),
                                         "aria-label": "Item quantity"
                                     }),
                                     React.createElement("button", { onClick: () => onUpdateQuantity(item.series.id, Number(item.quantity || 0) + 1), "aria-label": "Increase quantity" }, React.createElement(PlusIcon, null)),
@@ -4099,11 +4098,14 @@ const App = () => {
 
   const handleUpdateQuantity = (seriesId, quantity) => {
     setCartItems(prevItems => {
-        if (quantity <= 0) {
+        const newQuantity = parseInt(String(quantity), 10);
+
+        if (String(quantity).trim() === '' || isNaN(newQuantity) || newQuantity <= 0) {
             return prevItems.filter(item => item.series.id !== seriesId);
         }
+
         return prevItems.map(item =>
-            item.series.id === seriesId ? { ...item, quantity: String(quantity) } : item
+            item.series.id === seriesId ? { ...item, quantity: newQuantity } : item
         );
     });
   };
@@ -4144,293 +4146,266 @@ const App = () => {
 
     const handleShareOrder = async () => {
         setIsSharing(true);
+        // Add a small timeout to ensure the DOM is updated with the latest cart items
+        // before html2canvas runs. This is crucial because React's state updates are async.
+        await new Promise(resolve => setTimeout(resolve, 50));
         try {
-            const totals = cartItems.reduce((acc, item) => {
-              const { currency, price } = item.series;
-              const discount = item.discountPercentage || 0;
-              const discountedPrice = price * (1 - (discount / 100));
-              const quantity = Number(item.quantity || 0);
-              if (!acc[currency]) acc[currency] = 0;
-              acc[currency] += discountedPrice * quantity;
-              return acc;
-            }, {});
-            
-            // Temporarily render component to capture it
-            const tempDiv = document.createElement('div');
-            document.body.appendChild(tempDiv);
-            
-            const element = React.createElement(OrderShareImage, {
-              ref: shareImageRef,
-              cartItems: cartItems,
-              totals: totals,
-              t: t,
-              storeSettings: storeSettings,
-              cartStats: cartStats,
-            });
-
-            const root = createRoot(tempDiv);
-            
-            await new Promise(resolve => {
-                root.render(element);
-                // Use a short timeout to ensure the component is fully rendered with images
-                setTimeout(resolve, 500);
-            });
-            
-            if (shareImageRef.current) {
-                const canvas = await html2canvas(shareImageRef.current, { useCORS: true, scale: 2 });
-                const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.9));
-                
-                if (navigator.share && blob) {
-                   const file = new File([blob], 'order.jpg', { type: 'image/jpeg' });
-                   try {
-                     await navigator.share({
-                        title: `${storeSettings.name} Order`,
-                        files: [file],
-                     });
-                   } catch (error) {
-                       if (error.name !== 'AbortError') throw error;
-                   }
-                } else {
-                   const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
-                   const link = document.createElement('a');
-                   link.href = dataUrl;
-                   link.download = 'order.jpg';
-                   link.click();
-                }
+            if (!shareImageRef.current) {
+                throw new Error('Share component is not available.');
             }
-            
-            root.unmount();
-            document.body.removeChild(tempDiv);
+            const canvas = await html2canvas(shareImageRef.current, { useCORS: true, scale: 2 });
+            const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+            if (!blob) {
+                throw new Error('Canvas to Blob conversion failed.');
+            }
+            const file = new File([blob], 'order.png', { type: 'image/png' });
+
+            if (navigator.share && navigator.canShare({ files: [file] })) {
+                await navigator.share({
+                    title: storeSettings.name,
+                    text: `${storeSettings.name} - Order`,
+                    files: [file],
+                });
+            } else {
+                // Fallback for desktop or browsers that don't support Web Share API with files
+                const dataUrl = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = dataUrl;
+                link.download = 'order.png';
+                link.click();
+                URL.revokeObjectURL(dataUrl);
+            }
         } catch (error) {
-            console.error('Sharing failed:', error);
-            alert('Could not share order.');
+            console.error('Error sharing order:', error);
+            if (error.name !== 'AbortError') {
+                alert('Could not share order image.');
+            }
         } finally {
             setIsSharing(false);
         }
     };
     
-    const handleDownloadExcel = async () => {
+    const handleDownloadExcel = () => {
         setIsDownloadingExcel(true);
         try {
-            const wb = XLSX.utils.book_new();
+            const worksheetData = cartItems.map(item => ({
+                "Ürün Kodu": item.productCode,
+                "Ürün Adı": item.productName,
+                "Renk": item.variant.colorName,
+                "Seri": item.series.name,
+                "Adet (Paket)": item.quantity,
+                "Paket Fiyatı": item.series.price,
+                "İndirim (%)": item.discountPercentage || 0,
+                "İndirimli Paket Fiyatı": item.series.price * (1 - ((item.discountPercentage || 0) / 100)),
+                "Toplam Fiyat": item.quantity * item.series.price * (1 - ((item.discountPercentage || 0) / 100)),
+                "Para Birimi": item.series.currency,
+                "Birim (Adet)": getUnitsPerSeries(item.series.name),
+                "Toplam Birim (Adet)": getUnitsPerSeries(item.series.name) * item.quantity
+            }));
+
+            if (worksheetData.length === 0) {
+                alert("Sepetiniz boş.");
+                return;
+            }
+
+            const worksheet = XLSX.utils.json_to_sheet(worksheetData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Sipariş");
             
-            const groupedByProduct = cartItems.reduce((acc, item) => {
-                const key = `${item.productCode} - ${item.variant.colorName}`;
-                if (!acc[key]) {
-                    acc[key] = {
-                        productCode: item.productCode,
-                        productName: item.productName,
-                        color: item.variant.colorName,
-                        imageUrl: item.variant.imageUrl,
-                        series: []
-                    };
-                }
-                const units = getUnitsPerSeries(item.series.name);
-                const unitPrice = units > 0 ? item.series.price / units : item.series.price;
-                
-                acc[key].series.push({
-                    seriesName: item.series.name,
-                    quantity: Number(item.quantity),
-                    totalUnits: Number(item.quantity) * units,
-                    unitPrice: unitPrice,
-                    totalPrice: Number(item.quantity) * item.series.price,
-                    currency: item.series.currency
-                });
-                return acc;
-            }, {});
-
-            const data = Object.values(groupedByProduct).flatMap(group =>
-                group.series.map(s => ({
-                    [t.productCode]: group.productCode,
-                    [t.productName]: group.productName,
-                    [t.colorName]: group.color,
-                    [t.seriesName]: s.seriesName,
-                    [t.totalPacks]: s.quantity,
-                    [t.totalUnits]: s.totalUnits,
-                    [t.unitPrice]: s.unitPrice,
-                    [t.total]: s.totalPrice,
-                    [t.currency]: s.currency,
-                }))
-            );
+            const colWidths = Object.keys(worksheetData[0]).map(key => ({
+                wch: Math.max(key.length, ...worksheetData.map(row => String(row[key] ?? '').length)) + 2
+            }));
+            worksheet["!cols"] = colWidths;
             
-            const ws = XLSX.utils.json_to_sheet(data);
-            XLSX.utils.book_append_sheet(wb, ws, "Order");
-
-            XLSX.writeFile(wb, `${storeSettings.name}_Order_${new Date().toLocaleDateString()}.xlsx`);
-
+            XLSX.writeFile(workbook, "Siparis.xlsx");
         } catch (error) {
-            console.error("Failed to generate Excel file:", error);
-            alert("Could not generate Excel file.");
+            console.error("Error generating Excel file:", error);
+            alert("Excel dosyası oluşturulurken bir hata oluştu.");
         } finally {
             setIsDownloadingExcel(false);
         }
     };
+  
+    if (loading) {
+        return React.createElement("div", { className: "loader" }, "Loading...");
+    }
+  
+    if (isAdminView) {
+        return React.createElement(AdminPanel, { 
+            products: products, 
+            seriesTemplates: seriesTemplates,
+            storeSettings: storeSettings,
+            collarTypes: collarTypes,
+            contentTemplates: contentTemplates,
+            genderTemplates: genderTemplates,
+            onFetchData: fetchData, 
+            t: t,
+            activeTab: adminActiveTab,
+            onActiveTabChange: setAdminActiveTab,
+            onExit: () => setIsAdminView(false)
+        });
+    }
 
-    const handleLayoutChange = (newLayout) => {
-        setLayout(newLayout);
-    };
-    
-    const handleOpenShortsPlayer = (productId = null) => {
-        setActiveShortId(productId || shortsItems[0]?.product.id);
-        setIsShortsPlayerOpen(true);
-    };
+    const totalsForShare = cartItems.reduce((acc, item) => {
+      const { currency, price } = item.series;
+      const discount = item.discountPercentage || 0;
+      const discountedPrice = price * (1 - (discount / 100));
+      const quantity = Number(item.quantity || 0);
+      if (!acc[currency]) acc[currency] = 0;
+      acc[currency] += discountedPrice * quantity;
+      return acc;
+    }, {});
 
-  if (loading) {
-    return React.createElement("div", { className: "loader" }, "Loading...");
-  }
-
-  return (
-    React.createElement(React.Fragment, null,
-      React.createElement("header", { className: "app-header" },
-        React.createElement("div", { className: "container" },
-          React.createElement("div", { className: "header-content" },
-            React.createElement("div", { className: "store-info" },
-                storeSettings.logo && React.createElement("img", { src: storeSettings.logo, alt: "Store Logo", className: "store-logo-img", onClick: handleAdminToggle }),
-                React.createElement("h1", { className: "store-logo", onClick: handleLayoutToggle }, storeSettings.name),
-                React.createElement("h1", { className: "store-name-mobile-gallery", onClick: () => window.location.reload() }, storeSettings.name)
-            ),
-            !isAdminView && (
-                React.createElement("div", { className: `search-bar desktop-search-bar ${isMobileSearchVisible ? 'mobile-search-bar-active' : ''}` },
-                    isMobileSearchVisible && React.createElement("button", { className: "mobile-search-back-btn", onClick: () => setIsMobileSearchVisible(false) }, React.createElement(ArrowLeftIcon, null)),
-                    React.createElement("div", { className: "search-input-wrapper" },
-                        React.createElement(SearchIcon, { className: "search-icon" }),
-                        React.createElement("input", {
-                            type: "text",
-                            placeholder: t.searchPlaceholder,
-                            value: searchTerm,
-                            onChange: (e) => setSearchTerm(e.target.value)
-                        })
+    return React.createElement(React.Fragment, null,
+        React.createElement("header", { className: "app-header" },
+            React.createElement("div", { className: "container" },
+                React.createElement("div", { className: `header-content ${isMobileSearchVisible ? 'mobile-search-bar-active' : ''}` },
+                    isMobileSearchVisible ? (
+                        React.createElement(React.Fragment, null,
+                            React.createElement("button", { className: "mobile-search-back-btn", onClick: () => setIsMobileSearchVisible(false)}, React.createElement(ArrowLeftIcon, null)),
+                            React.createElement("div", { className: "search-input-wrapper"},
+                                React.createElement(SearchIcon, {className: "search-icon"}),
+                                React.createElement("input", {
+                                    type: "text",
+                                    placeholder: t.searchPlaceholder,
+                                    value: searchTerm,
+                                    onChange: e => setSearchTerm(e.target.value),
+                                    autoFocus: true
+                                })
+                            )
+                        )
+                    ) : (
+                        React.createElement(React.Fragment, null,
+                            React.createElement("div", { className: "store-info", onClick: () => {setLayout('gallery'); setFocusedProduct(null);}, style:{cursor:'pointer'} },
+                                storeSettings.logo && React.createElement("img", { src: storeSettings.logo, alt: "Store Logo", className: "store-logo-img" }),
+                                React.createElement("h1", { className: "store-logo" }, storeSettings.name),
+                                React.createElement("h1", { className: "store-name-mobile-gallery" }, storeSettings.brand || storeSettings.name)
+                            ),
+                            React.createElement("div", { className: "header-controls" },
+                                React.createElement("div", { className: "search-bar desktop-search-bar" },
+                                    React.createElement("input", {
+                                        type: "text",
+                                        placeholder: t.searchPlaceholder,
+                                        value: searchTerm,
+                                        onChange: e => setSearchTerm(e.target.value),
+                                    }),
+                                    React.createElement(SearchIcon, { className: 'search-icon' })
+                                ),
+                                React.createElement("button", { className: "mobile-search-toggle", onClick: () => setIsMobileSearchVisible(true)}, React.createElement(SearchIcon, null)),
+                                shortsItems.length > 0 && React.createElement("button", { className: "shorts-toggle-btn", onClick: () => { setActiveShortId(shortsItems[0]?.product.id); setIsShortsPlayerOpen(true); } }, React.createElement(VideoIcon, null)),
+                                React.createElement("div", { className: "language-switcher" },
+                                    React.createElement("select", { value: language, onChange: handleLanguageChange },
+                                        React.createElement("option", { value: "en" }, "EN"),
+                                        React.createElement("option", { value: "tr" }, "TR"),
+                                        React.createElement("option", { value: "ru" }, "RU")
+                                    )
+                                ),
+                                React.createElement("button", { className: "admin-toggle-btn", onClick: handleAdminToggle }, React.createElement(AdminIcon, null), React.createElement("span", null, t.admin)),
+                                React.createElement("div", { className: "view-toggle" },
+                                    React.createElement("button", { className: layout === 'double' ? 'active' : '', onClick: () => setLayout('double') }, React.createElement(ViewGridIcon, null)),
+                                    React.createElement("button", { className: layout === 'gallery' ? 'active' : '', onClick: () => setLayout('gallery') }, React.createElement(ViewGalleryIcon, null))
+                                ),
+                                React.createElement("button", { className: "cart-button", onClick: () => setIsCartOpen(true) },
+                                    React.createElement(CartIcon, null),
+                                    React.createElement("span", null, t.cart),
+                                    cartStats.totalPacks > 0 && React.createElement("span", { className: "cart-count" }, cartStats.totalPacks)
+                                )
+                            )
+                        )
                     )
                 )
-            ),
-            React.createElement("div", { className: "header-controls" },
-              !isAdminView && (
-                  React.createElement(React.Fragment, null,
-                    React.createElement("button", { className: "mobile-search-toggle", onClick: () => setIsMobileSearchVisible(true) }, React.createElement(SearchIcon, null)),
-                    shortsItems.length > 0 && React.createElement("button", { className: "btn-secondary shorts-toggle-btn", onClick: () => handleOpenShortsPlayer() }, React.createElement(VideoIcon, null)),
-                    React.createElement("div", { className: "view-toggle" },
-                        React.createElement("button", { className: layout === 'double' ? 'active' : '', onClick: () => handleLayoutChange('double'), title: "Double Grid" }, React.createElement(ViewGridIcon, null)),
-                        React.createElement("button", { className: layout === 'gallery' ? 'active' : '', onClick: () => handleLayoutChange('gallery'), title: t.galleryView }, React.createElement(ViewGalleryIcon, null))
+            )
+        ),
+        React.createElement("main", null,
+            React.createElement("div", { className: "container" },
+                layout === 'gallery' ? (
+                    React.createElement(GalleryView, {
+                        variants: filteredVariantsForGallery,
+                        onBulkAddToCart: handleBulkAddToCart,
+                        onOpenFilters: () => setIsFilterOpen(true),
+                        t,
+                        activeFilters,
+                        seriesNameToTemplateMap,
+                        storeSettings,
+                        onSelectOptions: handleOpenModal
+                    })
+                ) : (
+                    React.createElement("div", { className: `product-grid layout-${layout}` },
+                        filteredProducts.map(product => React.createElement(ProductCard, { key: product.id, product: product, onSelectOptions: handleOpenModal, t: t }))
                     )
-                  )
-              ),
-              React.createElement("div", { className: "language-switcher" },
-                React.createElement("select", { value: language, onChange: handleLanguageChange },
-                  React.createElement("option", { value: "en" }, "EN"),
-                  React.createElement("option", { value: "tr" }, "TR"),
-                  React.createElement("option", { value: "ru" }, "RU")
-                )
-              ),
-              !isAdminView && (
-                React.createElement("button", { className: "cart-button", onClick: () => setIsCartOpen(true) },
-                    React.createElement(CartIcon, null),
-                    React.createElement("span", null, t.cart),
-                    cartItems.length > 0 && React.createElement("span", { className: "cart-count" }, cartItems.length)
-                )
-              )
-            )
-          )
-        )
-      ),
-      React.createElement("main", null,
-        React.createElement("div", { className: "container" },
-          isAdminView ? (
-            React.createElement(AdminPanel, { 
-                products, 
-                seriesTemplates, 
-                storeSettings,
-                collarTypes,
-                contentTemplates,
-                genderTemplates,
-                onFetchData: () => fetchData(true), 
-                t,
-                activeTab: adminActiveTab,
-                onActiveTabChange: setAdminActiveTab,
-                onExit: () => setIsAdminView(false)
-            })
-          ) : (
-            layout === 'gallery' ? (
-                React.createElement(GalleryView, { 
-                    variants: filteredVariantsForGallery,
-                    onBulkAddToCart: handleBulkAddToCart, 
-                    onOpenFilters: () => setIsFilterOpen(true),
-                    t: t,
-                    activeFilters: activeFilters,
-                    seriesNameToTemplateMap: seriesNameToTemplateMap,
-                    storeSettings: storeSettings,
-                    onSelectOptions: handleOpenModal
-                })
-            ) : (
-                React.createElement("div", { className: `product-grid layout-${layout}` },
-                  filteredProducts.map(product =>
-                    React.createElement(ProductCard, { key: product.id, product, onSelectOptions: handleOpenModal, t })
-                  )
                 )
             )
-          )
-        )
-      ),
-      React.createElement(SeriesSelectionModal, {
-        isOpen: isModalOpen,
-        onClose: handleCloseModal,
-        productInfo: modalData?.product,
-        productVariant: modalData?.variant,
-        onAddToCart: handleAddToCart,
-        t
-      }),
-      React.createElement(CartSidebar, {
-        isOpen: isCartOpen,
-        onClose: () => setIsCartOpen(false),
-        cartItems,
-        onRemoveItem: handleRemoveFromCart,
-        onUpdateQuantity: handleUpdateQuantity,
-        onShareOrder: handleShareOrder,
-        isSharing: isSharing,
-        cartStats: cartStats,
-        t,
-        onDownloadExcel: handleDownloadExcel,
-        isDownloadingExcel: isDownloadingExcel
-      }),
-      React.createElement(AdminPasswordModal, {
-        isOpen: isPasswordModalOpen,
-        onClose: () => setIsPasswordModalOpen(false),
-        onSubmit: handlePasswordSubmit,
-        password: passwordInput,
-        setPassword: setPasswordInput,
-        error: passwordError,
-        t
-      }),
-      React.createElement(FilterSidebar, {
-        isOpen: isFilterOpen,
-        onClose: () => setIsFilterOpen(false),
-        products: products,
-        activeFilters: activeFilters,
-        setActiveFilters: setActiveFilters,
-        t
-      }),
-      React.createElement(ShortsPlayer, {
-          isOpen: isShortsPlayerOpen,
-          shortsItems: shortsItems,
-          activeShortId: activeShortId,
-          onClose: () => setIsShortsPlayerOpen(false)
-      }),
-      isA2hsBannerVisible && installPrompt && React.createElement(AddToHomeScreenBanner, {
-        onInstall: handleInstallClick,
-        onDismiss: handleDismissBanner,
-        storeSettings: storeSettings,
-        t: t
-      }),
-      showIosInstallHelp && React.createElement(IosInstallBanner, {
-        onDismiss: handleIosDismiss,
-        storeSettings: storeSettings,
-        t: t
-      })
-    )
-  );
+        ),
+        React.createElement(OrderShareImage, {
+            ref: shareImageRef,
+            cartItems: cartItems,
+            totals: totalsForShare,
+            t: t,
+            storeSettings: storeSettings,
+            cartStats: cartStats
+        }),
+        modalData && React.createElement(SeriesSelectionModal, {
+            isOpen: isModalOpen,
+            onClose: handleCloseModal,
+            productInfo: modalData.product,
+            productVariant: modalData.variant,
+            onAddToCart: (series, quantity) => {
+                handleAddToCart(series, quantity);
+            },
+            t: t
+        }),
+        React.createElement(CartSidebar, {
+            isOpen: isCartOpen,
+            onClose: () => setIsCartOpen(false),
+            cartItems: cartItems,
+            onRemoveItem: handleRemoveFromCart,
+            onUpdateQuantity: handleUpdateQuantity,
+            onShareOrder: handleShareOrder,
+            isSharing: isSharing,
+            cartStats: cartStats,
+            t: t,
+            onDownloadExcel: handleDownloadExcel,
+            isDownloadingExcel: isDownloadingExcel,
+        }),
+        React.createElement(AdminPasswordModal, {
+            isOpen: isPasswordModalOpen,
+            onClose: () => setIsPasswordModalOpen(false),
+            onSubmit: handlePasswordSubmit,
+            password: passwordInput,
+            setPassword: setPasswordInput,
+            error: passwordError,
+            t: t
+        }),
+        React.createElement(FilterSidebar, {
+            isOpen: isFilterOpen,
+            onClose: () => setIsFilterOpen(false),
+            products: products,
+            activeFilters: activeFilters,
+            setActiveFilters: setActiveFilters,
+            t: t
+        }),
+        React.createElement(ShortsPlayer, {
+            isOpen: isShortsPlayerOpen,
+            onClose: () => setIsShortsPlayerOpen(false),
+            shortsItems: shortsItems,
+            activeShortId: activeShortId
+        }),
+        isA2hsBannerVisible && installPrompt && React.createElement(AddToHomeScreenBanner, {
+            onInstall: handleInstallClick,
+            onDismiss: handleDismissBanner,
+            storeSettings: storeSettings,
+            t: t
+        }),
+        showIosInstallHelp && React.createElement(IosInstallBanner, {
+            onDismiss: handleIosDismiss,
+            storeSettings: storeSettings,
+            t: t
+        })
+    );
 };
 
 const rootElement = document.getElementById('root');
 if (rootElement) {
-  const root = createRoot(rootElement);
-  root.render(React.createElement(App));
+    const root = createRoot(rootElement);
+    root.render(React.createElement(App, null));
 }
