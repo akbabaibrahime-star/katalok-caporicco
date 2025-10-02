@@ -3908,7 +3908,22 @@ const App = () => {
     const handleBeforeInstallPrompt = (e) => {
       e.preventDefault();
       setInstallPrompt(e);
-      if (!localStorage.getItem('a2hsDismissed')) {
+
+      const dismissedData = localStorage.getItem('a2hsDismissed');
+      if (dismissedData) {
+        try {
+            const { dismissedAt } = JSON.parse(dismissedData);
+            const threeHoursInMillis = 3 * 60 * 60 * 1000;
+            if (Date.now() - dismissedAt > threeHoursInMillis) {
+                // More than 3 hours have passed, show it again
+                setIsA2hsBannerVisible(true);
+            }
+        } catch (error) {
+            // If data is corrupt, default to showing the banner
+            setIsA2hsBannerVisible(true);
+        }
+      } else {
+          // Never dismissed, show it
           setIsA2hsBannerVisible(true);
       }
     };
@@ -3947,12 +3962,12 @@ const App = () => {
   };
 
   const handleDismissBanner = () => {
-      localStorage.setItem('a2hsDismissed', 'true');
+      localStorage.setItem('a2hsDismissed', Date.now());
       setIsA2hsBannerVisible(false);
   };
   
   const handleIosDismiss = () => {
-    localStorage.setItem('iosA2hsDismissed', 'true');
+    localStorage.setItem('iosA2hsDismissed', Date.now());
     setShowIosInstallHelp(false);
   };
 
