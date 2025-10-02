@@ -344,7 +344,14 @@ main {
 .series-info {
   font-weight: 500;
 }
-.series-price {
+
+.series-info > .series-price {
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+    margin-top: 4px;
+}
+.series-info .series-price > span:not(.original-price):not(.discounted-price) {
     font-weight: 600;
     color: var(--primary-color);
 }
@@ -355,6 +362,10 @@ main {
     color: var(--secondary-color);
     margin-top: 2px;
 }
+.series-unit-price .original-price {
+    font-size: 0.9em;
+}
+
 
 .add-to-cart-controls {
   display: flex;
@@ -1706,6 +1717,10 @@ main {
     font-size: 1.1rem;
     color: var(--text-color);
     margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
 }
 .album-card-count {
     font-size: 0.9rem;
@@ -1727,6 +1742,41 @@ main {
     border-radius: 4px;
     white-space: nowrap;
 }
+
+.album-card-series-info span.series-price-item.discount {
+    background-color: transparent;
+    padding: 0;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 4px;
+}
+
+
+/* --- Discount Styles --- */
+.discount-tag {
+    background-color: var(--danger-color);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.original-price {
+    text-decoration: line-through;
+    color: var(--secondary-color);
+    font-size: 0.9em;
+}
+
+.discounted-price {
+    background-color: var(--danger-color);
+    color: white !important;
+    padding: 2px 5px !important;
+    border-radius: 3px !important;
+    font-weight: 600 !important;
+}
+
 
 .mobile-search-toggle {
     display: none;
