@@ -3666,6 +3666,7 @@ const App = () => {
               collarType: p.collar_type,
               content: p.content,
               gender: p.gender,
+              discountPercentage: p.discount_percentage,
               created_at: p.created_at,
               variants: (p.variants || []).map((v) => ({
                   ...v,
