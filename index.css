@@ -1343,7 +1343,7 @@ main {
 .gallery-header .btn-secondary {
     padding: 8px 24px;
     font-size: 0.9rem;
-    background-color: rgba(140, 140, 140, 0.4);
+    background-color: rgba(255, 140, 0, 0.7);
     color: white;
     border: 1px solid rgba(255, 255, 255, 0.15);
     backdrop-filter: blur(10px);
@@ -1353,7 +1353,7 @@ main {
     transition: background-color var(--transition-speed), border-color var(--transition-speed);
 }
 .gallery-header .btn-secondary:hover:not(:disabled) {
-    background-color: rgba(150, 150, 150, 0.55);
+    background-color: rgba(255, 140, 0, 0.9);
     border-color: rgba(255, 255, 255, 0.3);
 }
 .gallery-header .filter-toggle-btn {
@@ -1364,7 +1364,7 @@ main {
 .select-toggle-btn:disabled {
     opacity: 1; /* Use colors to show disabled state */
     cursor: not-allowed;
-    background-color: rgba(140, 140, 140, 0.2);
+    background-color: rgba(255, 140, 0, 0.25);
     color: rgba(255, 255, 255, 0.5);
     border-color: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(10px);
@@ -2620,7 +2620,7 @@ main {
 
 .a2hs-dismiss-btn {
   position: absolute;
-  top: 1px;
+  top: 2px;
   right: 4px;
   background: transparent;
   border: none;
