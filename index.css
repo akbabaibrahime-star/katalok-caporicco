@@ -2348,7 +2348,10 @@ main {
     .gallery-view-mobile .shorts-toggle-btn { order: 3; }
     .gallery-view-mobile .mobile-search-toggle { order: 4; }
     .gallery-view-mobile .cart-button { order: 5; }
-    .gallery-view-mobile .language-switcher { order: 6; }
+    .gallery-view-mobile .language-switcher { 
+        order: 6; 
+        display: block;
+    }
     .gallery-view-mobile .admin-toggle-btn { display: none; }
     
     .gallery-view-mobile .view-toggle {
