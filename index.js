@@ -637,15 +637,29 @@ const SeriesSelectionModal = ({ isOpen, onClose, productInfo, productVariant, on
                         productVariant.series.map((series) => {
                             const units = getUnitsPerSeries(series.name);
                             const unitPrice = units > 1 ? series.price / units : null;
-                            
+                            const hasDiscount = productInfo.discountPercentage > 0;
+                            const discountedPrice = hasDiscount ? series.price * (1 - (productInfo.discountPercentage / 100)) : series.price;
+                            const discountedUnitPrice = (unitPrice && hasDiscount) ? unitPrice * (1 - (productInfo.discountPercentage / 100)) : unitPrice;
+
                             return (
                                 React.createElement("div", { key: series.id, className: "series-item" },
                                     React.createElement("div", { className: "series-info" },
                                         React.createElement("p", null, series.name),
-                                        React.createElement("p", { className: "series-price" }, formatCurrency(series.price, series.currency)),
+                                        React.createElement("div", { className: "series-price" },
+                                            hasDiscount && React.createElement("span", { className: "original-price" }, formatCurrency(series.price, series.currency)),
+                                            React.createElement("span", { className: hasDiscount ? "discounted-price" : "" }, formatCurrency(discountedPrice, series.currency))
+                                        ),
                                         unitPrice !== null && (
                                             React.createElement("p", { className: "series-unit-price" },
-                                                `(${formatCurrency(unitPrice, series.currency)} ${t.perPiece})`
+                                                `(${hasDiscount ? 
+                                                    React.createElement(React.Fragment, null,
+                                                        React.createElement("span", { className: "original-price" }, formatCurrency(unitPrice, series.currency)),
+                                                        ' ',
+                                                        React.createElement("span", null, formatCurrency(discountedUnitPrice, series.currency))
+                                                    )
+                                                : 
+                                                    React.createElement("span", null, formatCurrency(unitPrice, series.currency))
+                                                } ${t.perPiece})`
                                             )
                                         )
                                     ),
@@ -1423,9 +1437,22 @@ const ProductForm = ({ product: initialProduct, seriesTemplates, collarTypes, co
                     React.createElement("label", null, t.productName),
                     React.createElement("input", { type: "text", value: product.name, onChange: (e) => handleChange('name', e.target.value) })
                 ),
-                React.createElement("div", { className: "form-group" },
-                    React.createElement("label", null, t.productCode),
-                    React.createElement("input", { type: "text", value: product.code, onChange: (e) => handleChange('code', e.target.value) })
+                React.createElement("div", { className: "form-grid" },
+                    React.createElement("div", { className: "form-group" },
+                        React.createElement("label", null, t.productCode),
+                        React.createElement("input", { type: "text", value: product.code, onChange: (e) => handleChange('code', e.target.value) })
+                    ),
+                    React.createElement("div", { className: "form-group" },
+                        React.createElement("label", null, "Discount Percentage (%)"),
+                        React.createElement("input", { 
+                            type: "number", 
+                            min: "0", 
+                            max: "100", 
+                            placeholder: "e.g. 20", 
+                            value: product.discountPercentage || '', 
+                            onChange: (e) => handleChange('discountPercentage', parseInt(e.target.value, 10) || 0) 
+                        })
+                    )
                 ),
                  React.createElement("div", { className: "form-group" },
                     React.createElement("label", null, "Video (Optional)"),
@@ -1657,6 +1684,7 @@ const ProductManager = ({ products, seriesTemplates, collarTypes, contentTemplat
             name: '',
             code: '',
             video_url: '',
+            discountPercentage: 0,
             variants: [],
         };
         setEditingProduct(newProduct);
@@ -1692,6 +1720,7 @@ const ProductManager = ({ products, seriesTemplates, collarTypes, contentTemplat
                     collar_type: productToSave.collarType,
                     content: productToSave.content,
                     gender: productToSave.gender,
+                    discount_percentage: productToSave.discountPercentage,
                 })
                 .select()
                 .single();
@@ -2613,6 +2642,7 @@ const ProductAlbumCard = ({ productGroup, onClick, t, seriesNameToTemplateMap })
             abbreviation,
             numericUnitPrice: data.numericUnitPrice,
             unitPrice: formatCurrency(data.numericUnitPrice, data.currency),
+            currency: data.currency
         }));
         
         return finalInfo.sort((a, b) => a.numericUnitPrice - b.numericUnitPrice);
@@ -2624,13 +2654,31 @@ const ProductAlbumCard = ({ productGroup, onClick, t, seriesNameToTemplateMap })
                 React.createElement("img", { src: getTransformedImageUrl(coverImage, { width: imageRenderSize, height: imageRenderSize }), alt: product.name })
             ),
             React.createElement("div", { className: "album-card-info" },
-                React.createElement("p", { className: "album-card-code" }, `${product.name} - ${product.code}`),
+                React.createElement("p", { className: "album-card-code" },
+                    React.createElement("span", null, `${product.name} - ${product.code}`),
+                    product.discountPercentage > 0 && React.createElement("span", { className: "discount-tag" }, `%${product.discountPercentage}`)
+                ),
                 React.createElement("p", { className: "album-card-count" }, `${variantCount} ${t.colors}`),
                 seriesInfo.length > 0 &&
                     React.createElement("div", { className: "album-card-series-info" },
-                        seriesInfo.map((s, index) =>
-                            React.createElement("span", { key: index }, `${s.abbreviation}: ${s.unitPrice}`)
-                        )
+                        seriesInfo.map((s, index) => {
+                            if (product.discountPercentage > 0) {
+                                const discountedUnitPrice = s.numericUnitPrice * (1 - (product.discountPercentage / 100));
+                                return (
+                                    React.createElement("span", { key: index, className: "series-price-item discount" },
+                                        `${s.abbreviation}: `,
+                                        React.createElement("span", { className: "original-price" }, s.unitPrice),
+                                        React.createElement("span", { className: "discounted-price" },
+                                            formatCurrency(discountedUnitPrice, s.currency)
+                                        )
+                                    )
+                                );
+                            } else {
+                                return (
+                                    React.createElement("span", { key: index }, `${s.abbreviation}: ${s.unitPrice}`)
+                                );
+                            }
+                        })
                     )
             )
         )
