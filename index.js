@@ -41,6 +41,7 @@ const translations = {
     productManagement: "Product Management",
     updateProducts: "Update Products",
     cancel: "Cancel",
+    close: "Close",
     addNewProduct: "Add New Product",
     editProduct: "Edit Product",
     edit: "Edit",
@@ -169,6 +170,7 @@ const translations = {
     a2hsTitle: "Install {appName} App",
     a2hsDescription: "Add to your home screen for a better experience.",
     a2hsInstall: "Install",
+    a2hsIosInstruction: "Tap the Share button, then 'Add to Home Screen'.",
   },
   tr: {
     searchPlaceholder: "Ürün adı veya koduyla ara...",
@@ -187,6 +189,7 @@ const translations = {
     productManagement: "Ürün Yönetimi",
     updateProducts: "Ürünleri Güncelle",
     cancel: "İptal",
+    close: "Kapat",
     addNewProduct: "Yeni Ürün Ekle",
     editProduct: "Ürünü Düzenle",
     edit: "Düzenle",
@@ -315,6 +318,7 @@ const translations = {
     a2hsTitle: "{appName} Uygulamasını Yükle",
     a2hsDescription: "Daha iyi bir deneyim için ana ekranınıza ekleyin.",
     a2hsInstall: "Yükle",
+    a2hsIosInstruction: "Paylaş düğmesine, ardından 'Ana Ekrana Ekle'ye dokunun.",
   },
   ru: {
     searchPlaceholder: "Поиск по названию или коду товара...",
@@ -333,6 +337,7 @@ const translations = {
     productManagement: "Управление продуктами",
     updateProducts: "Обновить продукты",
     cancel: "Отмена",
+    close: "Закрыть",
     addNewProduct: "Добавить новый продукт",
     editProduct: "Редактировать продукт",
     edit: "Редактировать",
@@ -461,6 +466,7 @@ const translations = {
     a2hsTitle: "Установить {appName}",
     a2hsDescription: "Добавьте на главный экран для удобства.",
     a2hsInstall: "Установить",
+    a2hsIosInstruction: "Нажмите значок «Поделиться», а затем «Добавить на главный экран».",
   },
 };
 
@@ -512,6 +518,8 @@ const ArrowLeftIcon = () => React.createElement("svg", { xmlns: "http://www.w3.o
 const VideoIcon = () => React.createElement("svg", { xmlns: "http://www.w3.org/2000/svg", width: "24", height: "24", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" }, React.createElement("path", { d: "m22 8-6 4 6 4V8Z" }), React.createElement("rect", { x: "2", y: "6", width: "14", height: "12", rx: "2", ry: "2" }));
 const VolumeOnIcon = () => React.createElement("svg", { xmlns: "http://www.w3.org/2000/svg", width: "24", height: "24", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" }, React.createElement("polygon", { points: "11 5 6 9 2 9 2 15 6 15 11 19 11 5" }), React.createElement("path", { d: "M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" }));
 const VolumeOffIcon = () => React.createElement("svg", { xmlns: "http://www.w3.org/2000/svg", width: "24", height: "24", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" }, React.createElement("polygon", { points: "11 5 6 9 2 9 2 15 6 15 11 19 11 5" }), React.createElement("line", { x1: "23", y1: "9", x2: "17", y2: "15" }), React.createElement("line", { x1: "17", y1: "9", x2: "23", y2: "15" }));
+const ShareIconIos = () => React.createElement("svg", { style: { marginRight: '12px', flexShrink: 0 }, width: "32", height: "32", viewBox: "0 0 21 21", fill: "none", stroke: "currentColor", strokeWidth: "1.5", strokeLinecap: "round", strokeLinejoin: "round" }, React.createElement("path", { d: "M16.5 7.5l-5.964-5.964a.05.05 0 00-.071 0L4.5 7.5" }), React.createElement("path", { d: "M10.5 1.5v12" }), React.createElement("path", { d: "M7.5 6.5h-4a2 2 0 00-2 2v9a2 2 0 002 2h13a2 2 0 002-2v-9a2 2 0 00-2-2h-4" }));
+
 
 const getTranslationKey = (str) => {
     if (!str) return '';
@@ -3670,6 +3678,19 @@ const AddToHomeScreenBanner = ({ onInstall, onDismiss, storeSettings, t }) => {
     );
 };
 
+const IosInstallBanner = ({ onDismiss, storeSettings, t }) => {
+    return (
+        React.createElement("div", { className: "add-to-home-screen-banner" },
+            React.createElement("button", { className: "a2hs-dismiss-btn", onClick: onDismiss, "aria-label": t.close }, "×"),
+            React.createElement(ShareIconIos, null),
+            React.createElement("div", { className: "a2hs-text", style: { marginRight: 0 } },
+                React.createElement("strong", null, t.a2hsTitle.replace('{appName}', storeSettings.name)),
+                React.createElement("span", null, t.a2hsIosInstruction)
+            )
+        )
+    );
+};
+
 
 // --- MAIN APP COMPONENT ---
 const App = () => {
@@ -3713,6 +3734,7 @@ const App = () => {
   const [layout, setLayout] = useState('double');
   const [installPrompt, setInstallPrompt] = useState(null);
   const [isA2hsBannerVisible, setIsA2hsBannerVisible] = useState(false);
+  const [showIosInstallHelp, setShowIosInstallHelp] = useState(false);
   useEffect(() => {
     setLayout(window.innerWidth <= 768 ? 'gallery' : 'double');
   }, []);
@@ -3898,6 +3920,18 @@ const App = () => {
     };
   }, []);
 
+  useEffect(() => {
+    const isIos = () => /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || ('standalone' in window.navigator && window.navigator.standalone === true);
+
+    if (isIos() && !isStandalone && !localStorage.getItem('iosA2hsDismissed')) {
+      const timer = setTimeout(() => {
+        setShowIosInstallHelp(true);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+}, []);
+
   const handleInstallClick = () => {
       if (!installPrompt) return;
       installPrompt.prompt();
@@ -3915,6 +3949,11 @@ const App = () => {
   const handleDismissBanner = () => {
       localStorage.setItem('a2hsDismissed', 'true');
       setIsA2hsBannerVisible(false);
+  };
+  
+  const handleIosDismiss = () => {
+    localStorage.setItem('iosA2hsDismissed', 'true');
+    setShowIosInstallHelp(false);
   };
 
   const t = useMemo(() => translations[language], [language]);
@@ -4364,6 +4403,11 @@ const App = () => {
       isA2hsBannerVisible && installPrompt && React.createElement(AddToHomeScreenBanner, {
         onInstall: handleInstallClick,
         onDismiss: handleDismissBanner,
+        storeSettings: storeSettings,
+        t: t
+      }),
+      showIosInstallHelp && React.createElement(IosInstallBanner, {
+        onDismiss: handleIosDismiss,
         storeSettings: storeSettings,
         t: t
       })
