@@ -171,6 +171,17 @@ const translations = {
     a2hsDescription: "Add to your home screen for a better experience.",
     a2hsInstall: "Install",
     a2hsIosInstruction: "Tap the Share button, then 'Add to Home Screen'.",
+    storeNameColor: "Store Name Color",
+    changeAdminPassword: "Change Admin Password",
+    currentPassword: "Current Password",
+    newPassword: "New Password",
+    confirmNewPassword: "Confirm New Password",
+    changePassword: "Change Password",
+    passwordChangedSuccess: "Password changed successfully!",
+    passwordChangeFailed: "Failed to change password.",
+    fillAllPasswordFields: "Please fill all password fields.",
+    newPasswordsDoNotMatch: "New passwords do not match.",
+    currentPasswordIncorrect: "Current password is incorrect.",
   },
   tr: {
     searchPlaceholder: "Ürün adı veya koduyla ara...",
@@ -319,6 +330,17 @@ const translations = {
     a2hsDescription: "Daha iyi bir deneyim için ana ekranınıza ekleyin.",
     a2hsInstall: "Yükle",
     a2hsIosInstruction: "Paylaş düğmesine, ardından 'Ana Ekrana Ekle'ye dokunun.",
+    storeNameColor: "Mağaza Adı Rengi",
+    changeAdminPassword: "Yönetici Şifresini Değiştir",
+    currentPassword: "Mevcut Şifre",
+    newPassword: "Yeni Şifre",
+    confirmNewPassword: "Yeni Şifreyi Onayla",
+    changePassword: "Şifreyi Değiştir",
+    passwordChangedSuccess: "Şifre başarıyla değiştirildi!",
+    passwordChangeFailed: "Şifre değiştirilemedi.",
+    fillAllPasswordFields: "Lütfen tüm şifre alanlarını doldurun.",
+    newPasswordsDoNotMatch: "Yeni şifreler eşleşmiyor.",
+    currentPasswordIncorrect: "Mevcut şifre yanlış.",
   },
   ru: {
     searchPlaceholder: "Поиск по названию или коду товара...",
@@ -467,6 +489,17 @@ const translations = {
     a2hsDescription: "Добавьте на главный экран для удобства.",
     a2hsInstall: "Установить",
     a2hsIosInstruction: "Нажмите значок «Поделиться», а затем «Добавить на главный экран».",
+    storeNameColor: "Цвет названия магазина",
+    changeAdminPassword: "Изменить пароль администратора",
+    currentPassword: "Текущий пароль",
+    newPassword: "Новый пароль",
+    confirmNewPassword: "Подтвердите новый пароль",
+    changePassword: "Изменить пароль",
+    passwordChangedSuccess: "Пароль успешно изменен!",
+    passwordChangeFailed: "Не удалось изменить пароль.",
+    fillAllPasswordFields: "Пожалуйста, заполните все поля пароля.",
+    newPasswordsDoNotMatch: "Новые пароли не совпадают.",
+    currentPasswordIncorrect: "Текущий пароль неверен.",
   },
 };
 
@@ -661,7 +694,7 @@ const SeriesSelectionModal = ({ isOpen, onClose, productInfo, productVariant, on
                         productVariant.series.map((series) => {
                             const units = getUnitsPerSeries(series.name);
                             const unitPrice = units > 1 ? series.price / units : null;
-                            const hasDiscount = productInfo.discountPercentage > 0;
+                            const hasDiscount = typeof productInfo.discountPercentage === 'number' && productInfo.discountPercentage > 0;
                             const discountedPrice = hasDiscount ? series.price * (1 - (productInfo.discountPercentage / 100)) : series.price;
                             const discountedUnitPrice = (unitPrice && hasDiscount) ? unitPrice * (1 - (productInfo.discountPercentage / 100)) : unitPrice;
 
@@ -811,7 +844,7 @@ const CartSidebar = ({ isOpen, onClose, cartItems, onRemoveItem, onUpdateQuantit
                 React.createElement("p", { className: "cart-empty-message" }, t.emptyCart)
               ) : (
                 cartItems.map((item, index) => {
-                    const hasDiscount = item.discountPercentage && item.discountPercentage > 0;
+                    const hasDiscount = typeof item.discountPercentage === 'number' && item.discountPercentage > 0;
                     const seriesPrice = item.series.price;
                     const discountedSeriesPrice = hasDiscount ? seriesPrice * (1 - (item.discountPercentage / 100)) : seriesPrice;
 
@@ -936,7 +969,7 @@ const OrderShareImage = forwardRef(({ cartItems, totals, t, storeSettings, cartS
             ),
             React.createElement("div", { className: "order-share-body" },
                 cartItems.map((item, index) => {
-                    const hasDiscount = item.discountPercentage && item.discountPercentage > 0;
+                    const hasDiscount = typeof item.discountPercentage === 'number' && item.discountPercentage > 0;
                     const seriesPrice = item.series.price;
                     const discountedSeriesPrice = hasDiscount ? seriesPrice * (1 - (item.discountPercentage / 100)) : seriesPrice;
 
@@ -2293,14 +2326,46 @@ const TemplateForm = ({ template: initialTemplate, onSave, onCancel, t }) => {
 
 const StoreSettingsEditor = ({ settings, onFetchData, t }) => {
     const [currentSettings, setCurrentSettings] = useState(settings);
+    const [passwordFields, setPasswordFields] = useState({ current: '', newPass: '', confirmPass: '' });
 
     useEffect(() => {
         setCurrentSettings(settings);
     }, [settings]);
 
-    const handleChange = (e) => {
+    const handleSettingChange = (e) => {
         const { name, value } = e.target;
         setCurrentSettings((s) => ({ ...s, [name]: value }));
+    };
+
+    const handlePasswordInputChange = (e) => {
+        const { name, value } = e.target;
+        setPasswordFields(p => ({ ...p, [name]: value }));
+    };
+
+    const handlePasswordChange = async () => {
+        const { current, newPass, confirmPass } = passwordFields;
+        if (!current || !newPass || !confirmPass) {
+            alert(t.fillAllPasswordFields);
+            return;
+        }
+        if (newPass !== confirmPass) {
+            alert(t.newPasswordsDoNotMatch);
+            return;
+        }
+        if (current !== settings.adminPassword) {
+            alert(t.currentPasswordIncorrect);
+            return;
+        }
+
+        const { error } = await db.from('store_settings').update({ admin_password: newPass }).eq('id', 1);
+
+        if (error) {
+            alert(`${t.passwordChangeFailed}: ${error.message}`);
+        } else {
+            alert(t.passwordChangedSuccess);
+            setPasswordFields({ current: '', newPass: '', confirmPass: '' });
+            onFetchData();
+        }
     };
 
     const handleLogoUpload = async (e) => {
@@ -2318,13 +2383,14 @@ const StoreSettingsEditor = ({ settings, onFetchData, t }) => {
     };
     
     const handleSave = async () => {
-        const { name, logo, brand, manufacturerTitle, origin } = currentSettings;
+        const { name, logo, brand, manufacturerTitle, origin, nameColor } = currentSettings;
         const { error } = await db.from('store_settings').update({
             name,
             logo,
             brand,
             manufacturer_title: manufacturerTitle,
             origin,
+            name_color: nameColor
         }).eq('id', 1);
 
         if (error) {
@@ -2338,24 +2404,28 @@ const StoreSettingsEditor = ({ settings, onFetchData, t }) => {
 
     return (
         React.createElement("div", { className: "settings-form" },
-             React.createElement("div", { className: "admin-header" },
+            React.createElement("div", { className: "admin-header" },
                 React.createElement("h2", null, t.storeSettings)
             ),
             React.createElement("div", { className: "form-group" },
                 React.createElement("label", null, t.storeNameLabel),
-                React.createElement("input", { type: "text", name: "name", value: currentSettings.name || '', onChange: handleChange })
+                React.createElement("input", { type: "text", name: "name", value: currentSettings.name || '', onChange: handleSettingChange })
+            ),
+            React.createElement("div", { className: "form-group" },
+                React.createElement("label", null, t.storeNameColor),
+                React.createElement("input", { type: "color", name: "nameColor", value: currentSettings.nameColor || '#192A56', onChange: handleSettingChange, className: "color-input" })
             ),
             React.createElement("div", { className: "form-group" },
                 React.createElement("label", null, t.brandLabel),
-                React.createElement("input", { type: "text", name: "brand", value: currentSettings.brand || '', onChange: handleChange })
+                React.createElement("input", { type: "text", name: "brand", value: currentSettings.brand || '', onChange: handleSettingChange })
             ),
             React.createElement("div", { className: "form-group" },
                 React.createElement("label", null, t.manufacturerTitleLabel),
-                React.createElement("input", { type: "text", name: "manufacturerTitle", value: currentSettings.manufacturerTitle || '', onChange: handleChange })
+                React.createElement("input", { type: "text", name: "manufacturerTitle", value: currentSettings.manufacturerTitle || '', onChange: handleSettingChange })
             ),
             React.createElement("div", { className: "form-group" },
                 React.createElement("label", null, t.originLabel),
-                React.createElement("input", { type: "text", name: "origin", value: currentSettings.origin || '', onChange: handleChange })
+                React.createElement("input", { type: "text", name: "origin", value: currentSettings.origin || '', onChange: handleSettingChange })
             ),
             React.createElement("div", { className: "form-group" },
                 React.createElement("label", null, t.storeLogoLabel),
@@ -2365,8 +2435,25 @@ const StoreSettingsEditor = ({ settings, onFetchData, t }) => {
                     React.createElement("label", { htmlFor: "logoUpload", className: "btn-secondary" }, t.uploadLogo)
                 )
             ),
-             React.createElement("div", { className: "form-actions" },
+            React.createElement("div", { className: "form-actions" },
                 React.createElement("button", { className: "btn-primary", onClick: handleSave }, t.saveChanges)
+            ),
+            React.createElement("div", { className: "admin-section-divider" }),
+            React.createElement("h3", null, t.changeAdminPassword),
+            React.createElement("div", { className: "form-group" },
+                React.createElement("label", null, t.currentPassword),
+                React.createElement("input", { type: "password", name: "current", value: passwordFields.current, onChange: handlePasswordInputChange })
+            ),
+            React.createElement("div", { className: "form-group" },
+                React.createElement("label", null, t.newPassword),
+                React.createElement("input", { type: "password", name: "newPass", value: passwordFields.newPass, onChange: handlePasswordInputChange })
+            ),
+            React.createElement("div", { className: "form-group" },
+                React.createElement("label", null, t.confirmNewPassword),
+                React.createElement("input", { type: "password", name: "confirmPass", value: passwordFields.confirmPass, onChange: handlePasswordInputChange })
+            ),
+            React.createElement("div", { className: "form-actions" },
+                React.createElement("button", { className: "btn-primary", onClick: handlePasswordChange }, t.changePassword)
             )
         )
     );
@@ -2742,7 +2829,7 @@ const ProductAlbumCard = ({ productGroup, onClick, t, seriesNameToTemplateMap })
                 seriesInfo.length > 0 &&
                     React.createElement("div", { className: "album-card-series-info" },
                         seriesInfo.map((s, index) => {
-                            if (product.discountPercentage > 0) {
+                            if (typeof product.discountPercentage === 'number' && product.discountPercentage > 0) {
                                 const discountedUnitPrice = s.numericUnitPrice * (1 - (product.discountPercentage / 100));
                                 return (
                                     React.createElement("span", { key: index, className: "series-price-item discount" },
@@ -3698,7 +3785,7 @@ const App = () => {
   const [collarTypes, setCollarTypes] = useState([]);
   const [contentTemplates, setContentTemplates] = useState([]);
   const [genderTemplates, setGenderTemplates] = useState([]);
-  const [storeSettings, setStoreSettings] = useState({ name: "Loading...", logo: null, brand: '', manufacturerTitle: '', origin: '' });
+  const [storeSettings, setStoreSettings] = useState({ name: "Loading...", logo: null, brand: '', manufacturerTitle: '', origin: '', nameColor: '#192A56', adminPassword: 'klm!44' });
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [language, setLanguage] = useState(
@@ -3747,8 +3834,6 @@ const App = () => {
   const [activeShortId, setActiveShortId] = useState(null);
   const [adminActiveTab, setAdminActiveTab] = useState('products');
   const shareImageRef = useRef(null);
-  
-  const ADMIN_PASSWORD = "klm!44";
 
   const isNewProduct = (createdAt) => {
     if (!createdAt) return false;
@@ -3831,6 +3916,8 @@ const App = () => {
                   brand: settingsData.brand,
                   manufacturerTitle: settingsData.manufacturer_title,
                   origin: settingsData.origin,
+                  nameColor: settingsData.name_color,
+                  adminPassword: settingsData.admin_password || 'klm!44'
               });
           }
 
@@ -4126,7 +4213,7 @@ const App = () => {
   };
   
   const handlePasswordSubmit = () => {
-      if (passwordInput === ADMIN_PASSWORD) {
+      if (passwordInput === storeSettings.adminPassword) {
           setIsAdminView(true);
           setIsPasswordModalOpen(false);
           setPasswordInput('');
@@ -4287,7 +4374,7 @@ const App = () => {
             React.createElement("div", { className: "store-info" },
                 storeSettings.logo && React.createElement("img", { src: storeSettings.logo, alt: "Store Logo", className: "store-logo-img", onClick: handleAdminToggle }),
                 React.createElement("h1", { className: "store-logo", onClick: handleLayoutToggle }, storeSettings.name),
-                React.createElement("h1", { className: "store-name-mobile-gallery", onClick: () => window.location.reload() }, storeSettings.name)
+                React.createElement("h1", { className: "store-name-mobile-gallery", onClick: () => window.location.reload(), style: { color: storeSettings.nameColor || '#192A56' } }, storeSettings.name)
             ),
             !isAdminView && (
                 React.createElement("div", { className: `search-bar desktop-search-bar ${isMobileSearchVisible ? 'mobile-search-bar-active' : ''}` },
