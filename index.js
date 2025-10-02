@@ -3423,7 +3423,6 @@ const GalleryView = ({ variants, onBulkAddToCart, onOpenFilters, t, activeFilter
         React.createElement("div", { className: `gallery-view-wrapper ${isSelectMode ? 'select-mode-active' : ''}` },
              React.createElement("div", { className: "gallery-header" },
                 React.createElement("button", { className: "btn-secondary filter-toggle-btn", onClick: onOpenFilters },
-                    React.createElement(FilterIcon, null),
                     React.createElement("span", null, t.filters)
                 ),
                 React.createElement("div", { className: "gallery-view-mode-toggle" },
