@@ -3,13 +3,16 @@ import React, { useState, useMemo, useRef, forwardRef, useEffect, useCallback } 
 import { createRoot } from 'react-dom/client';
 
 // --- SUPABASE CLIENT SETUP ---
-const SUPABASE_URL = 'httppc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5sZ21vam5ia2V0aHdpcmdtcHdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc5MjQ1ODEsImV4cCI6MjA3MzUwMDU4MX0.j_vBJrDalubGqlOGT3zLyIKf6LAJ_I5N5MPjEe2MwA0';
+const SUPABASE_URL = 'https://nlgmojnbkethwirgmpwh.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5sZ21vam5ia2V0aHdpcmdtcHdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc5MjQ1ODEsImV4cCI6MjA3MzUwMDU4MX0.j_vBJrDalubGqlOGT3zLyIKf6LAJ_I5N5MPjEe2MwA0';
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 
+const generateId = () => `id_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
 const colorNameMap = {
-  // English000', 'green': '#008000', 'blue': '#0000ff', 'yellow': '#ffff00', 'cyan': '#00ffff', 'magenta': '#ff00ff', 'gray': '#808080', 'grey': '#808080', 'silver': '#c0c0c0', 'maroon': '#800000', 'olive': '#808000', 'purple': '#800080', 'teal': '#008080', 'navy': '#000080', 'orange': '#ffa500', 'pink': '#ffc0cb', 'brown': '#a52a2a', 'beige': '#f5f5dc', 'ivory': '#fffff0', 'khaki': '#f0e68c', 'lavender': '#e6e6fa', 'indigo': '#4b0082', 'ecru': '#c2b280', 'cream': '#fffdd0', 'charcoal': '#36454f', 'anthracite': '#383e42', 'mint': '#3eb489', 'burgundy': '#800020', 'mustard': '#ffdb58',
+  // English
+  'black': '#000000', 'white': '#ffffff', 'red': '#ff0000', 'green': '#008000', 'blue': '#0000ff', 'yellow': '#ffff00', 'cyan': '#00ffff', 'magenta': '#ff00ff', 'gray': '#808080', 'grey': '#808080', 'silver': '#c0c0c0', 'maroon': '#800000', 'olive': '#808000', 'purple': '#800080', 'teal': '#008080', 'navy': '#000080', 'orange': '#ffa500', 'pink': '#ffc0cb', 'brown': '#a52a2a', 'beige': '#f5f5dc', 'ivory': '#fffff0', 'khaki': '#f0e68c', 'lavender': '#e6e6fa', 'indigo': '#4b0082', 'ecru': '#c2b280', 'cream': '#fffdd0', 'charcoal': '#36454f', 'anthracite': '#383e42', 'mint': '#3eb489', 'burgundy': '#800020', 'mustard': '#ffdb58',
   // Turkish
   'siyah': '#000000', 'beyaz': '#ffffff', 'kırmızı': '#ff0000', 'yeşil': '#008000', 'mavi': '#0000ff', 'sarı': '#ffff00', 'gri': '#808080', 'gümüş': '#7c8288', 'bordo': '#890007', 'lacivert': '#000080', 'turuncu': '#ffa500', 'pembe': '#ffc0cb', 'kahverengi': '#a52a2a', 'bej': '#f5f5dc', 'ekru': '#c2b280', 'krem': '#fffdd0', 'antrasit': '#383e42', 'nane': '#3eb489', 'hardal': '#ffdb58', 'marin': '#1b2966', 'safran': '#f4c430', 'saks': '#0000c8',
   'kiremit': '#6d342d', 'füme': '#4c4e51', 'lila': '#685168', 'gri melanj': '#c0c0c0', 'nefti': '#013220', 'petrol': '#216477', 'tarçın': '#7b3f00', 'haki': '#4b5320', 'küf': '#78866b',
