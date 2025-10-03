@@ -1,6 +1,4 @@
 
-
-
 import React, { useState, useMemo, useRef, forwardRef, useEffect, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
 
@@ -651,8 +649,18 @@ const parseSeriesString = (seriesName) => {
 
 
 // --- SERIES SELECTION MODAL ---
-const SeriesSelectionModal = ({ isOpen, onClose, productInfo, productVariant, onAddToCart, t }) => {
+const SeriesSelectionModal = ({ isOpen, onClose, productInfo, productVariant, onBulkAddToCart, t }) => {
     const [quantities, setQuantities] = useState({});
+
+    useEffect(() => {
+        if (isOpen) {
+            setQuantities({});
+        }
+    }, [isOpen, productVariant]);
+
+    const totalQuantity = useMemo(() => {
+        return Object.values(quantities).reduce((sum, qty) => sum + (Number(qty) || 0), 0);
+    }, [quantities]);
 
     if (!isOpen) return null;
 
@@ -671,12 +679,46 @@ const SeriesSelectionModal = ({ isOpen, onClose, productInfo, productVariant, on
         setQuantities(newQuantities);
     };
 
-    const handleAddToCart = (series) => {
-        const quantity = Number(quantities[series.id] || 0);
-        if (quantity > 0 && quantity <= series.stock) {
-            onAddToCart(series, quantity);
-            setQuantities(prev => ({ ...prev, [series.id]: '' }));
+    const handleQuantityStep = (seriesId, step) => {
+        const series = productVariant.series.find((s) => s.id === seriesId);
+        if (!series) return;
+
+        const currentQuantity = Number(quantities[seriesId] || 0);
+        const newQuantity = Math.max(0, currentQuantity + step);
+        
+        setQuantities(prev => ({
+            ...prev,
+            [seriesId]: String(Math.min(newQuantity, series.stock))
+        }));
+    };
+
+    const handleConfirmAddToCart = () => {
+        const itemsToAdd = Object.entries(quantities)
+            .map(([seriesId, quantity]) => {
+                const numQuantity = Number(quantity);
+                if (numQuantity > 0) {
+                    const series = productVariant.series.find(s => s.id === seriesId);
+                    if (series) {
+                        return { 
+                            product: productInfo,
+                            variant: {
+                                id: productVariant.id,
+                                colorName: productVariant.colorName,
+                                imageUrl: productVariant.imageUrl
+                            },
+                            series, 
+                            quantity: numQuantity 
+                        };
+                    }
+                }
+                return null;
+            })
+            .filter(Boolean);
+
+        if (itemsToAdd.length > 0) {
+            onBulkAddToCart(itemsToAdd);
         }
+        onClose();
     };
 
     return (
@@ -723,32 +765,32 @@ const SeriesSelectionModal = ({ isOpen, onClose, productInfo, productVariant, on
                                     ),
                                     React.createElement("div", { className: "add-to-cart-controls" },
                                         series.stock > 0 ? (
-                                            React.createElement(React.Fragment, null,
+                                             React.createElement("div", { className: "quantity-stepper" },
+                                                React.createElement("button", { onClick: () => handleQuantityStep(series.id, -1), disabled: (Number(quantities[series.id]) || 0) <= 0 }, "-"),
                                                 React.createElement("input", {
                                                     type: "number",
-                                                    className: "quantity-input",
                                                     min: "0",
                                                     max: series.stock,
                                                     value: quantities[series.id] || '',
-                                                    onChange: (e) => handleQuantityChange(series.id, e.target.value),
                                                     placeholder: "0",
+                                                    onChange: (e) => handleQuantityChange(series.id, e.target.value),
                                                     "aria-label": `Quantity for ${series.name}`
                                                 }),
-                                                React.createElement("button", {
-                                                    className: "add-button",
-                                                    onClick: () => handleAddToCart(series),
-                                                    disabled: Number(quantities[series.id] || 0) <= 0
-                                                },
-                                                    t.addToCart
-                                                )
+                                                React.createElement("button", { onClick: () => handleQuantityStep(series.id, 1), disabled: (Number(quantities[series.id]) || 0) >= series.stock }, "+")
                                             )
                                         ) : (
-                                            React.createElement("button", { className: "add-button", disabled: true }, t.outOfStock)
+                                            React.createElement("span", { className: "out-of-stock-label" }, t.outOfStock)
                                         )
                                     )
                                 )
                             );
                         })
+                    )
+                ),
+                React.createElement("footer", { className: "modal-footer" },
+                    React.createElement("button", { className: "btn-secondary", onClick: onClose }, t.cancel),
+                    React.createElement("button", { className: "btn-primary", onClick: handleConfirmAddToCart, disabled: totalQuantity === 0 }, 
+                        t.confirmAddToCart
                     )
                 )
             )
@@ -4429,29 +4471,34 @@ const App = () => {
                 collarTypes,
                 contentTemplates,
                 genderTemplates,
-                onFetchData: () => fetchData(true), 
+                onFetchData: fetchData,
                 t,
                 activeTab: adminActiveTab,
                 onActiveTabChange: setAdminActiveTab,
                 onExit: () => setIsAdminView(false)
-            })
+             })
           ) : (
             layout === 'gallery' ? (
-                React.createElement(GalleryView, { 
+                 React.createElement(GalleryView, {
                     variants: filteredVariantsForGallery,
-                    onBulkAddToCart: handleBulkAddToCart, 
+                    onBulkAddToCart: handleBulkAddToCart,
                     onOpenFilters: () => setIsFilterOpen(true),
                     t: t,
                     activeFilters: activeFilters,
                     seriesNameToTemplateMap: seriesNameToTemplateMap,
                     storeSettings: storeSettings,
-                    onSelectOptions: handleOpenModal
+                    onSelectOptions: (product, variant) => handleOpenModal(product, variant)
                 })
             ) : (
                 React.createElement("div", { className: `product-grid layout-${layout}` },
-                  filteredProducts.map(product =>
-                    React.createElement(ProductCard, { key: product.id, product, onSelectOptions: handleOpenModal, t })
-                  )
+                    filteredProducts.map(product =>
+                        React.createElement(ProductCard, {
+                            key: product.id,
+                            product: product,
+                            onSelectOptions: (p, v) => handleOpenModal(p, v),
+                            t: t
+                        })
+                    )
                 )
             )
           )
@@ -4462,38 +4509,38 @@ const App = () => {
         onClose: handleCloseModal,
         productInfo: modalData?.product,
         productVariant: modalData?.variant,
-        onAddToCart: handleAddToCart,
-        t
+        onBulkAddToCart: handleBulkAddToCart,
+        t: t,
       }),
       React.createElement(CartSidebar, {
         isOpen: isCartOpen,
         onClose: () => setIsCartOpen(false),
-        cartItems,
+        cartItems: cartItems,
         onRemoveItem: handleRemoveFromCart,
         onUpdateQuantity: handleUpdateQuantity,
         onShareOrder: handleShareOrder,
         isSharing: isSharing,
         cartStats: cartStats,
-        t,
+        t: t,
         onDownloadExcel: handleDownloadExcel,
-        isDownloadingExcel: isDownloadingExcel
+        isDownloadingExcel: isDownloadingExcel,
       }),
       React.createElement(AdminPasswordModal, {
-        isOpen: isPasswordModalOpen,
-        onClose: () => setIsPasswordModalOpen(false),
-        onSubmit: handlePasswordSubmit,
-        password: passwordInput,
-        setPassword: setPasswordInput,
-        error: passwordError,
-        t
+          isOpen: isPasswordModalOpen,
+          onClose: () => setIsPasswordModalOpen(false),
+          onSubmit: handlePasswordSubmit,
+          password: passwordInput,
+          setPassword: setPasswordInput,
+          error: passwordError,
+          t: t
       }),
       React.createElement(FilterSidebar, {
-        isOpen: isFilterOpen,
-        onClose: () => setIsFilterOpen(false),
-        products: products,
-        activeFilters: activeFilters,
-        setActiveFilters: setActiveFilters,
-        t
+          isOpen: isFilterOpen,
+          onClose: () => setIsFilterOpen(false),
+          products: products,
+          activeFilters: activeFilters,
+          setActiveFilters: setActiveFilters,
+          t: t
       }),
       React.createElement(ShortsPlayer, {
           isOpen: isShortsPlayerOpen,
@@ -4502,22 +4549,19 @@ const App = () => {
           onClose: () => setIsShortsPlayerOpen(false)
       }),
       isA2hsBannerVisible && installPrompt && React.createElement(AddToHomeScreenBanner, {
-        onInstall: handleInstallClick,
-        onDismiss: handleDismissBanner,
-        storeSettings: storeSettings,
-        t: t
+          onInstall: handleInstallClick,
+          onDismiss: handleDismissBanner,
+          storeSettings: storeSettings,
+          t: t
       }),
       showIosInstallHelp && React.createElement(IosInstallBanner, {
-        onDismiss: handleIosDismiss,
-        storeSettings: storeSettings,
-        t: t
+          onDismiss: handleIosDismiss,
+          storeSettings: storeSettings,
+          t: t
       })
     )
   );
 };
 
-const rootElement = document.getElementById('root');
-if (rootElement) {
-  const root = createRoot(rootElement);
-  root.render(React.createElement(App));
-}
+const root = createRoot(document.getElementById('root'));
+root.render(React.createElement(App));
