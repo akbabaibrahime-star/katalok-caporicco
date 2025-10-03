@@ -180,6 +180,20 @@ const translations = {
     fillAllPasswordFields: "Please fill all password fields.",
     newPasswordsDoNotMatch: "New passwords do not match.",
     currentPasswordIncorrect: "Current password is incorrect.",
+    login: "Login",
+    logout: "Logout",
+    signUp: "Sign Up",
+    email: "Email",
+    password: "Password",
+    createAccount: "Create Account",
+    dontHaveAccount: "Don't have an account?",
+    alreadyHaveAccount: "Already have an account?",
+    subdomain: "Subdomain",
+    subdomainHelp: "Your unique store URL (e.g., mystore).",
+    storeNotFound: "Store not found.",
+    welcome: "Welcome to the Digital Catalog Platform",
+    createYourStore: "Create Your Store",
+    loginToYourStore: "Login to Your Store",
   },
   tr: {
     searchPlaceholder: "Ürün adı veya koduyla ara...",
@@ -339,6 +353,20 @@ const translations = {
     fillAllPasswordFields: "Lütfen tüm şifre alanlarını doldurun.",
     newPasswordsDoNotMatch: "Yeni şifreler eşleşmiyor.",
     currentPasswordIncorrect: "Mevcut şifre yanlış.",
+    login: "Giriş Yap",
+    logout: "Çıkış Yap",
+    signUp: "Kaydol",
+    email: "E-posta",
+    password: "Şifre",
+    createAccount: "Hesap Oluştur",
+    dontHaveAccount: "Hesabın yok mu?",
+    alreadyHaveAccount: "Zaten bir hesabın var mı?",
+    subdomain: "Alt Alan Adı",
+    subdomainHelp: "Benzersiz mağaza URL'niz (örn: magazam).",
+    storeNotFound: "Mağaza bulunamadı.",
+    welcome: "Dijital Katalog Platformuna Hoş Geldiniz",
+    createYourStore: "Mağazanızı Oluşturun",
+    loginToYourStore: "Mağazanıza Giriş Yapın",
   },
   ru: {
     searchPlaceholder: "Поиск по названию или коду товара...",
@@ -498,6 +526,20 @@ const translations = {
     fillAllPasswordFields: "Пожалуйста, заполните все поля пароля.",
     newPasswordsDoNotMatch: "Новые пароли не совпадают.",
     currentPasswordIncorrect: "Текущий пароль неверен.",
+    login: "Войти",
+    logout: "Выйти",
+    signUp: "Зарегистрироваться",
+    email: "Электронная почта",
+    password: "Пароль",
+    createAccount: "Создать аккаунт",
+    dontHaveAccount: "Нет аккаунта?",
+    alreadyHaveAccount: "Уже есть аккаунт?",
+    subdomain: "Поддомен",
+    subdomainHelp: "Ваш уникальный URL магазина (например, mystore).",
+    storeNotFound: "Магазин не найден.",
+    welcome: "Добро пожаловать на платформу цифровых каталогов",
+    createYourStore: "Создайте свой магазин",
+    loginToYourStore: "Войдите в свой магазин",
   },
 };
 
@@ -999,13 +1041,13 @@ const CartSidebar = ({ isOpen, onClose, cartItems, onRemoveItem, onUpdateQuantit
 
 
 // --- ORDER SHARE IMAGE COMPONENT ---
-const OrderShareImage = forwardRef(({ cartItems, totals, t, storeSettings, cartStats }, ref) => {
+const OrderShareImage = forwardRef(({ cartItems, totals, t, store, cartStats }, ref) => {
     return (
         React.createElement("div", { id: "order-share-container", ref: ref },
             React.createElement("div", { className: "order-share-header" },
                 React.createElement("div", { className: "order-share-store-info" },
-                   storeSettings.logo && React.createElement("img", { src: storeSettings.logo, alt: "Store Logo", className: "order-share-logo", crossOrigin: "anonymous" }),
-                   React.createElement("h2", null, storeSettings.name)
+                   store.logo && React.createElement("img", { src: store.logo, alt: "Store Logo", className: "order-share-logo", crossOrigin: "anonymous" }),
+                   React.createElement("h2", null, store.name)
                 ),
                 React.createElement("p", null, new Date().toLocaleString())
             ),
@@ -1083,44 +1125,6 @@ const OrderShareImage = forwardRef(({ cartItems, totals, t, storeSettings, cartS
 
 
 // --- ADMIN PANEL COMPONENTS ---
-const AdminPasswordModal = ({ isOpen, onClose, onSubmit, password, setPassword, error, t }) => {
-    if (!isOpen) return null;
-
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        onSubmit();
-    };
-
-    return (
-        React.createElement("div", { className: "modal-overlay", onClick: onClose },
-            React.createElement("div", { className: "modal-container password-modal", onClick: (e) => e.stopPropagation() },
-                React.createElement("header", { className: "modal-header" },
-                    React.createElement("h3", null, t.adminLogin),
-                    React.createElement("button", { className: "close-modal-btn", onClick: onClose, "aria-label": "Close modal" }, "×")
-                ),
-                React.createElement("form", { onSubmit: handleSubmit, className: "modal-body" },
-                    React.createElement("div", { className: "form-group" },
-                        React.createElement("label", { htmlFor: "admin-password" }, t.enterPassword),
-                        React.createElement("input", {
-                            id: "admin-password",
-                            type: "password",
-                            value: password,
-                            onChange: (e) => setPassword(e.target.value),
-                            autoFocus: true
-                        })
-                    ),
-                    error && React.createElement("p", { className: "password-error" }, error),
-                    React.createElement("div", { className: "form-actions password-modal-actions" },
-                        React.createElement("button", { type: "button", className: "btn-secondary", onClick: onClose }, t.cancel),
-                        React.createElement("button", { type: "submit", className: "btn-primary" }, t.submit)
-                    )
-                )
-            )
-        )
-    );
-};
-
-
 const CollarTypeForm = ({ type: initialType, onSave, onCancel, t }) => {
     const [type, setType] = useState(initialType);
 
@@ -1139,13 +1143,14 @@ const CollarTypeForm = ({ type: initialType, onSave, onCancel, t }) => {
     );
 };
 
-const CollarTypesManager = ({ collarTypes, onFetchData, t }) => {
+const CollarTypesManager = ({ collarTypes, onFetchData, t, storeId }) => {
     const [editingType, setEditingType] = useState(null);
 
     const handleSave = async (typeToSave) => {
         const { error } = await db.from('collar_types').upsert({
             id: typeToSave.id.startsWith('new_') ? undefined : typeToSave.id,
             name: typeToSave.name,
+            store_id: storeId,
         });
 
         if (error) {
@@ -1218,13 +1223,14 @@ const ContentTemplateForm = ({ template: initialTemplate, onSave, onCancel, t })
     );
 };
 
-const ContentManager = ({ contentTemplates, onFetchData, t }) => {
+const ContentManager = ({ contentTemplates, onFetchData, t, storeId }) => {
     const [editingTemplate, setEditingTemplate] = useState(null);
 
     const handleSave = async (templateToSave) => {
         const { error } = await db.from('content_templates').upsert({
             id: templateToSave.id.startsWith('new_') ? undefined : templateToSave.id,
             name: templateToSave.name,
+            store_id: storeId,
         });
 
         if (error) {
@@ -1297,13 +1303,14 @@ const GenderTemplateForm = ({ template: initialTemplate, onSave, onCancel, t }) 
     );
 };
 
-const GenderManager = ({ genderTemplates, onFetchData, t }) => {
+const GenderManager = ({ genderTemplates, onFetchData, t, storeId }) => {
     const [editingTemplate, setEditingTemplate] = useState(null);
 
     const handleSave = async (templateToSave) => {
         const { error } = await db.from('gender_templates').upsert({
             id: templateToSave.id.startsWith('new_') ? undefined : templateToSave.id,
             name: templateToSave.name,
+            store_id: storeId,
         });
 
         if (error) {
@@ -1359,7 +1366,7 @@ const GenderManager = ({ genderTemplates, onFetchData, t }) => {
 };
 
 
-const ProductForm = ({ product: initialProduct, seriesTemplates, collarTypes, contentTemplates, genderTemplates, onSave, onCancel, t }) => {
+const ProductForm = ({ product: initialProduct, seriesTemplates, collarTypes, contentTemplates, genderTemplates, onSave, onCancel, t, storeId }) => {
     const [product, setProduct] = useState(JSON.parse(JSON.stringify(initialProduct)));
     const [uploadingVideo, setUploadingVideo] = useState({ active: false, type: null, index: null });
     const [openTemplateDropdown, setOpenTemplateDropdown] = useState(null);
@@ -1526,7 +1533,7 @@ const ProductForm = ({ product: initialProduct, seriesTemplates, collarTypes, co
         const file = e.target.files?.[0];
         if (!file) return;
 
-        const filePath = `${Date.now()}-${file.name}`;
+        const filePath = `${storeId}/${Date.now()}-${file.name}`;
         const { error } = await db.storage.from('product-images').upload(filePath, file);
         
         if (error) {
@@ -1547,7 +1554,7 @@ const ProductForm = ({ product: initialProduct, seriesTemplates, collarTypes, co
 
         setUploadingVideo({ active: true, type: variantIndex === null ? 'main' : 'variant', index: variantIndex });
 
-        const filePath = `public/${Date.now()}-${file.name.replace(/\s/g, '_')}`;
+        const filePath = `public/${storeId}/${Date.now()}-${file.name.replace(/\s/g, '_')}`;
         const { error } = await db.storage.from('product-videos').upload(filePath, file);
 
         if (error) {
@@ -1814,7 +1821,7 @@ const ProductForm = ({ product: initialProduct, seriesTemplates, collarTypes, co
     );
 };
 
-const ProductManager = ({ products, seriesTemplates, collarTypes, contentTemplates, genderTemplates, onFetchData, t }) => {
+const ProductManager = ({ products, seriesTemplates, collarTypes, contentTemplates, genderTemplates, onFetchData, t, storeId }) => {
     const [editingProduct, setEditingProduct] = useState(null);
 
     const handleAddNew = () => {
@@ -1825,6 +1832,7 @@ const ProductManager = ({ products, seriesTemplates, collarTypes, contentTemplat
             video_url: '',
             discountPercentage: 0,
             variants: [],
+            store_id: storeId,
         };
         setEditingProduct(newProduct);
     };
@@ -1860,6 +1868,7 @@ const ProductManager = ({ products, seriesTemplates, collarTypes, contentTemplat
                     content: productToSave.content,
                     gender: productToSave.gender,
                     discount_percentage: productToSave.discountPercentage,
+                    store_id: storeId,
                 })
                 .select()
                 .single();
@@ -1940,7 +1949,8 @@ const ProductManager = ({ products, seriesTemplates, collarTypes, contentTemplat
           genderTemplates: genderTemplates,
           onSave: handleSave, 
           onCancel: () => setEditingProduct(null), 
-          t: t 
+          t: t,
+          storeId: storeId,
         });
     }
 
@@ -2138,7 +2148,7 @@ const URLVideoUploader = ({ product, onUpdate, t }) => {
     );
 };
 
-const ShortsManager = ({ products, onFetchData, t }) => {
+const ShortsManager = ({ products, onFetchData, t, storeId }) => {
     const [searchQuery, setSearchQuery] = useState('');
     const [uploadingId, setUploadingId] = useState(null);
 
@@ -2169,7 +2179,7 @@ const ShortsManager = ({ products, onFetchData, t }) => {
 
         setUploadingId(product.id);
 
-        const filePath = `public/${Date.now()}-${file.name.replace(/\s/g, '_')}`;
+        const filePath = `public/${storeId}/${Date.now()}-${file.name.replace(/\s/g, '_')}`;
         const { error: uploadError } = await db.storage.from('product-videos').upload(filePath, file);
 
         if (uploadError) {
@@ -2192,9 +2202,9 @@ const ShortsManager = ({ products, onFetchData, t }) => {
             if (product.video_url && product.video_url.includes('/product-videos/')) {
                 try {
                     const url = new URL(product.video_url);
-                    const path = url.pathname.split('/product-videos/public/')[1];
+                    const path = url.pathname.split(`/product-videos/public/${storeId}/`)[1];
                     if (path) {
-                        await db.storage.from('product-videos').remove([`public/${path}`]);
+                        await db.storage.from('product-videos').remove([`public/${storeId}/${path}`]);
                     }
                 } catch (e) {
                     console.error("Could not parse or delete video from storage:", e);
@@ -2276,14 +2286,15 @@ const ShortsManager = ({ products, onFetchData, t }) => {
 };
 
 
-const SeriesTemplatesManager = ({ templates, onFetchData, t }) => {
+const SeriesTemplatesManager = ({ templates, onFetchData, t, storeId }) => {
     const [editingTemplate, setEditingTemplate] = useState(null);
 
     const handleSave = async (templateToSave) => {
         const { error } = await db.from('series_templates').upsert({
             id: templateToSave.id.startsWith('new_') ? undefined : templateToSave.id,
             name: templateToSave.name,
-            series_names: templateToSave.seriesNames
+            series_names: templateToSave.seriesNames,
+            store_id: storeId,
         });
 
         if (error) {
@@ -2366,48 +2377,16 @@ const TemplateForm = ({ template: initialTemplate, onSave, onCancel, t }) => {
     );
 };
 
-const StoreSettingsEditor = ({ settings, onFetchData, t }) => {
-    const [currentSettings, setCurrentSettings] = useState(settings);
-    const [passwordFields, setPasswordFields] = useState({ current: '', newPass: '', confirmPass: '' });
+const StoreSettingsEditor = ({ store, onFetchData, t }) => {
+    const [currentSettings, setCurrentSettings] = useState(store);
 
     useEffect(() => {
-        setCurrentSettings(settings);
-    }, [settings]);
+        setCurrentSettings(store);
+    }, [store]);
 
     const handleSettingChange = (e) => {
         const { name, value } = e.target;
         setCurrentSettings((s) => ({ ...s, [name]: value }));
-    };
-
-    const handlePasswordInputChange = (e) => {
-        const { name, value } = e.target;
-        setPasswordFields(p => ({ ...p, [name]: value }));
-    };
-
-    const handlePasswordChange = async () => {
-        const { current, newPass, confirmPass } = passwordFields;
-        if (!current || !newPass || !confirmPass) {
-            alert(t.fillAllPasswordFields);
-            return;
-        }
-        if (newPass !== confirmPass) {
-            alert(t.newPasswordsDoNotMatch);
-            return;
-        }
-        if (current !== settings.adminPassword) {
-            alert(t.currentPasswordIncorrect);
-            return;
-        }
-
-        const { error } = await db.from('store_settings').update({ admin_password: newPass }).eq('id', 1);
-
-        if (error) {
-            alert(`${t.passwordChangeFailed}: ${error.message}`);
-        } else {
-            alert(t.passwordChangedSuccess);
-            setPasswordFields({ current: '', newPass: '', confirmPass: '' });
-            onFetchData();
-        }
     };
 
     const handleLogoUpload = async (e) => {
@@ -2425,15 +2404,15 @@ const StoreSettingsEditor = ({ settings, onFetchData, t }) => {
     };
     
     const handleSave = async () => {
-        const { name, logo, brand, manufacturerTitle, origin, nameColor } = currentSettings;
-        const { error } = await db.from('store_settings').update({
+        const { name, logo, brand, manufacturer_title, origin, name_color } = currentSettings;
+        const { error } = await db.from('stores').update({
             name,
             logo,
             brand,
-            manufacturer_title: manufacturerTitle,
+            manufacturer_title,
             origin,
-            name_color: nameColor
-        }).eq('id', 1);
+            name_color
+        }).eq('id', store.id);
 
         if (error) {
             alert(`Failed to save settings: ${error.message}`);
@@ -2450,12 +2429,16 @@ const StoreSettingsEditor = ({ settings, onFetchData, t }) => {
                 React.createElement("h2", null, t.storeSettings)
             ),
             React.createElement("div", { className: "form-group" },
+                React.createElement("label", null, t.subdomain),
+                React.createElement("input", { type: "text", name: "subdomain", value: currentSettings.subdomain || '', readOnly: true, disabled: true, title: "Subdomain cannot be changed after creation." })
+            ),
+            React.createElement("div", { className: "form-group" },
                 React.createElement("label", null, t.storeNameLabel),
                 React.createElement("input", { type: "text", name: "name", value: currentSettings.name || '', onChange: handleSettingChange })
             ),
             React.createElement("div", { className: "form-group" },
                 React.createElement("label", null, t.storeNameColor),
-                React.createElement("input", { type: "color", name: "nameColor", value: currentSettings.nameColor || '#192A56', onChange: handleSettingChange, className: "color-input" })
+                React.createElement("input", { type: "color", name: "name_color", value: currentSettings.name_color || '#192A56', onChange: handleSettingChange, className: "color-input" })
             ),
             React.createElement("div", { className: "form-group" },
                 React.createElement("label", null, t.brandLabel),
@@ -2463,7 +2446,7 @@ const StoreSettingsEditor = ({ settings, onFetchData, t }) => {
             ),
             React.createElement("div", { className: "form-group" },
                 React.createElement("label", null, t.manufacturerTitleLabel),
-                React.createElement("input", { type: "text", name: "manufacturerTitle", value: currentSettings.manufacturerTitle || '', onChange: handleSettingChange })
+                React.createElement("input", { type: "text", name: "manufacturer_title", value: currentSettings.manufacturer_title || '', onChange: handleSettingChange })
             ),
             React.createElement("div", { className: "form-group" },
                 React.createElement("label", null, t.originLabel),
@@ -2479,35 +2462,21 @@ const StoreSettingsEditor = ({ settings, onFetchData, t }) => {
             ),
             React.createElement("div", { className: "form-actions" },
                 React.createElement("button", { className: "btn-primary", onClick: handleSave }, t.saveChanges)
-            ),
-            React.createElement("div", { className: "admin-section-divider" }),
-            React.createElement("h3", null, t.changeAdminPassword),
-            React.createElement("div", { className: "form-group" },
-                React.createElement("label", null, t.currentPassword),
-                React.createElement("input", { type: "password", name: "current", value: passwordFields.current, onChange: handlePasswordInputChange })
-            ),
-            React.createElement("div", { className: "form-group" },
-                React.createElement("label", null, t.newPassword),
-                React.createElement("input", { type: "password", name: "newPass", value: passwordFields.newPass, onChange: handlePasswordInputChange })
-            ),
-            React.createElement("div", { className: "form-group" },
-                React.createElement("label", null, t.confirmNewPassword),
-                React.createElement("input", { type: "password", name: "confirmPass", value: passwordFields.confirmPass, onChange: handlePasswordInputChange })
-            ),
-            React.createElement("div", { className: "form-actions" },
-                React.createElement("button", { className: "btn-primary", onClick: handlePasswordChange }, t.changePassword)
             )
         )
     );
 };
 
 
-const AdminPanel = ({ products, seriesTemplates, storeSettings, collarTypes, contentTemplates, genderTemplates, onFetchData, t, activeTab, onActiveTabChange, onExit }) => {
+const AdminPanel = ({ products, seriesTemplates, currentStore, collarTypes, contentTemplates, genderTemplates, onFetchData, t, activeTab, onActiveTabChange, onExit, onLogout }) => {
     return (
         React.createElement("div", { className: "admin-panel" },
              React.createElement("div", { className: "admin-header" },
                 React.createElement("h2", null, t.admin),
-                React.createElement("button", { className: "btn-secondary", onClick: onExit }, t.viewCatalog)
+                 React.createElement("div", { style: { display: 'flex', gap: '12px' } },
+                    React.createElement("button", { className: "btn-secondary", onClick: onExit }, t.viewCatalog),
+                    React.createElement("button", { className: "btn-danger", onClick: onLogout }, t.logout)
+                )
             ),
             React.createElement("nav", { className: "admin-nav" },
                 React.createElement("button", { onClick: () => onActiveTabChange('products'), className: activeTab === 'products' ? 'active' : '' }, t.productManager),
@@ -2517,21 +2486,21 @@ const AdminPanel = ({ products, seriesTemplates, storeSettings, collarTypes, con
                 React.createElement("button", { onClick: () => onActiveTabChange('settings'), className: activeTab === 'settings' ? 'active' : '' }, t.storeSettings)
             ),
             React.createElement("div", { className: "admin-content" },
-                activeTab === 'products' && React.createElement(ProductManager, { products: products, seriesTemplates: seriesTemplates, collarTypes: collarTypes, contentTemplates: contentTemplates, genderTemplates: genderTemplates, onFetchData: onFetchData, t: t }),
+                activeTab === 'products' && React.createElement(ProductManager, { products: products, seriesTemplates: seriesTemplates, collarTypes: collarTypes, contentTemplates: contentTemplates, genderTemplates: genderTemplates, onFetchData: onFetchData, t: t, storeId: currentStore.id }),
                 activeTab === 'quickStock' && React.createElement(QuickStockManager, { products: products, onFetchData: onFetchData, t: t }),
-                activeTab === 'shorts' && React.createElement(ShortsManager, { products: products, onFetchData: onFetchData, t: t }),
+                activeTab === 'shorts' && React.createElement(ShortsManager, { products: products, onFetchData: onFetchData, t: t, storeId: currentStore.id }),
                 activeTab === 'templates' && (
                     React.createElement(React.Fragment, null,
-                        React.createElement(SeriesTemplatesManager, { templates: seriesTemplates, onFetchData: onFetchData, t: t }),
+                        React.createElement(SeriesTemplatesManager, { templates: seriesTemplates, onFetchData: onFetchData, t: t, storeId: currentStore.id }),
                         React.createElement("div", { className: "admin-section-divider" }),
-                        React.createElement(CollarTypesManager, { collarTypes: collarTypes, onFetchData: onFetchData, t: t }),
+                        React.createElement(CollarTypesManager, { collarTypes: collarTypes, onFetchData: onFetchData, t: t, storeId: currentStore.id }),
                         React.createElement("div", { className: "admin-section-divider" }),
-                        React.createElement(ContentManager, { contentTemplates: contentTemplates, onFetchData: onFetchData, t: t }),
+                        React.createElement(ContentManager, { contentTemplates: contentTemplates, onFetchData: onFetchData, t: t, storeId: currentStore.id }),
                         React.createElement("div", { className: "admin-section-divider" }),
-                        React.createElement(GenderManager, { genderTemplates: genderTemplates, onFetchData: onFetchData, t: t })
+                        React.createElement(GenderManager, { genderTemplates: genderTemplates, onFetchData: onFetchData, t: t, storeId: currentStore.id })
                     )
                 ),
-                activeTab === 'settings' && React.createElement(StoreSettingsEditor, { settings: storeSettings, onFetchData: onFetchData, t: t })
+                activeTab === 'settings' && React.createElement(StoreSettingsEditor, { store: currentStore, onFetchData: onFetchData, t: t })
             )
         )
     );
@@ -3315,7 +3284,7 @@ const LazyImage = ({ src, size, alt }) => {
 };
 
 
-const GalleryView = ({ variants, onBulkAddToCart, onOpenFilters, t, activeFilters, seriesNameToTemplateMap, storeSettings, onSelectOptions }) => {
+const GalleryView = ({ variants, onBulkAddToCart, onOpenFilters, t, activeFilters, seriesNameToTemplateMap, store, onSelectOptions }) => {
     const [itemSize, setItemSize] = useState(220);
     useEffect(() => {
         setItemSize(window.innerWidth <= 768 ? 80 : 220);
@@ -3618,8 +3587,8 @@ const GalleryView = ({ variants, onBulkAddToCart, onOpenFilters, t, activeFilter
                 onSelectOptions: onSelectOptions
             }),
             React.createElement("div", { className: "mobile-gallery-footer" },
-                React.createElement("p", null, storeSettings.name),
-                React.createElement("p", null, `© ${new Date().getFullYear()} ${storeSettings.brand || ''}. ${t.allRightsReserved}`)
+                React.createElement("p", null, store.name),
+                React.createElement("p", null, `© ${new Date().getFullYear()} ${store.brand || ''}. ${t.allRightsReserved}`)
             )
         )
     );
@@ -3792,13 +3761,13 @@ const ShortsPlayer = ({ isOpen, shortsItems, activeShortId, onClose }) => {
 };
 
 // --- ADD TO HOME SCREEN BANNER ---
-const AddToHomeScreenBanner = ({ onInstall, onDismiss, storeSettings, t }) => {
+const AddToHomeScreenBanner = ({ onInstall, onDismiss, store, t }) => {
     return (
         React.createElement("div", { className: "add-to-home-screen-banner" },
             React.createElement("button", { className: "a2hs-dismiss-btn", onClick: onDismiss, "aria-label": "Dismiss" }, "×"),
-            React.createElement("img", { src: storeSettings.logo || "/icon-192x192.png", alt: "App Icon", className: "a2hs-logo" }),
+            React.createElement("img", { src: store.logo || "/icon-192x192.png", alt: "App Icon", className: "a2hs-logo" }),
             React.createElement("div", { className: "a2hs-text" },
-                React.createElement("strong", null, t.a2hsTitle.replace('{appName}', storeSettings.name)),
+                React.createElement("strong", null, t.a2hsTitle.replace('{appName}', store.name)),
                 React.createElement("span", null, t.a2hsDescription)
             ),
             React.createElement("button", { className: "a2hs-install-btn", onClick: onInstall }, t.a2hsInstall)
@@ -3806,14 +3775,105 @@ const AddToHomeScreenBanner = ({ onInstall, onDismiss, storeSettings, t }) => {
     );
 };
 
-const IosInstallBanner = ({ onDismiss, storeSettings, t }) => {
+const IosInstallBanner = ({ onDismiss, store, t }) => {
     return (
         React.createElement("div", { className: "add-to-home-screen-banner" },
             React.createElement("button", { className: "a2hs-dismiss-btn", onClick: onDismiss, "aria-label": t.close }, "×"),
             React.createElement(ShareIconIos, null),
             React.createElement("div", { className: "a2hs-text", style: { marginRight: 0 } },
-                React.createElement("strong", null, t.a2hsTitle.replace('{appName}', storeSettings.name)),
+                React.createElement("strong", null, t.a2hsTitle.replace('{appName}', store.name)),
                 React.createElement("span", null, t.a2hsIosInstruction)
+            )
+        )
+    );
+};
+
+// --- AUTH MODAL ---
+const AuthModal = ({ isOpen, initialMode, onClose, onLogin, onSignUp, t }) => {
+    const [mode, setMode] = useState(initialMode);
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [storeName, setStoreName] = useState('');
+    const [subdomain, setSubdomain] = useState('');
+
+    useEffect(() => {
+        setMode(initialMode);
+    }, [initialMode]);
+
+    useEffect(() => {
+        if (isOpen) {
+            setEmail('');
+            setPassword('');
+            setStoreName('');
+            setSubdomain('');
+        }
+    }, [isOpen]);
+
+
+    if (!isOpen) return null;
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        if (mode === 'login') {
+            onLogin(email, password);
+        } else {
+            onSignUp(email, password, storeName, subdomain);
+        }
+    };
+
+    return (
+        React.createElement("div", { className: "modal-overlay", onClick: onClose },
+            React.createElement("div", { className: "modal-container auth-modal", onClick: (e) => e.stopPropagation() },
+                React.createElement("header", { className: "modal-header" },
+                    React.createElement("h3", null, mode === 'login' ? t.login : t.signUp),
+                    React.createElement("button", { className: "close-modal-btn", onClick: onClose }, "×")
+                ),
+                React.createElement("form", { className: "modal-body", onSubmit: handleSubmit },
+                    mode === 'signup' && (
+                        React.createElement(React.Fragment, null,
+                            React.createElement("div", { className: "form-group" },
+                                React.createElement("label", { htmlFor: "storeName" }, t.storeNameLabel),
+                                React.createElement("input", { type: "text", id: "storeName", value: storeName, onChange: (e) => setStoreName(e.target.value), required: true })
+                            ),
+                            React.createElement("div", { className: "form-group" },
+                                React.createElement("label", { htmlFor: "subdomain" }, t.subdomain),
+                                React.createElement("input", { type: "text", id: "subdomain", value: subdomain, onChange: (e) => setSubdomain(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '')), required: true }),
+                                React.createElement("p", { className: "form-help" }, t.subdomainHelp)
+                            )
+                        )
+                    ),
+                    React.createElement("div", { className: "form-group" },
+                        React.createElement("label", { htmlFor: "email" }, t.email),
+                        React.createElement("input", { type: "email", id: "email", value: email, onChange: (e) => setEmail(e.target.value), required: true, autoComplete: "email" })
+                    ),
+                    React.createElement("div", { className: "form-group" },
+                        React.createElement("label", { htmlFor: "password" }, t.password),
+                        React.createElement("input", { type: "password", id: "password", value: password, onChange: (e) => setPassword(e.target.value), required: true, autoComplete: "current-password" })
+                    ),
+                    React.createElement("button", { type: "submit", className: "btn-primary", style: { width: '100%', marginTop: '10px' } }, mode === 'login' ? t.login : t.createAccount),
+                    React.createElement("p", { className: "auth-switch", style: { textAlign: 'center', marginTop: '15px' } },
+                        mode === 'login' ? t.dontHaveAccount : t.alreadyHaveAccount,
+                        " ",
+                        React.createElement("button", { type: "button", className: "btn-link-style", onClick: () => setMode(mode === 'login' ? 'signup' : 'login') },
+                            mode === 'login' ? t.signUp : t.login
+                        )
+                    )
+                )
+            )
+        )
+    );
+};
+
+// --- LANDING PAGE ---
+const LandingPage = ({ onShowAuth, t }) => {
+    return (
+        React.createElement("div", { className: "landing-page" },
+            React.createElement("div", { className: "landing-content" },
+                React.createElement("h1", null, t.welcome),
+                React.createElement("div", { className: "landing-actions" },
+                    React.createElement("button", { className: "btn-primary", onClick: () => onShowAuth('signup') }, t.createYourStore),
+                    React.createElement("button", { className: "btn-secondary", onClick: () => onShowAuth('login') }, t.loginToYourStore)
+                )
             )
         )
     );
@@ -3827,7 +3887,6 @@ const App = () => {
   const [collarTypes, setCollarTypes] = useState([]);
   const [contentTemplates, setContentTemplates] = useState([]);
   const [genderTemplates, setGenderTemplates] = useState([]);
-  const [storeSettings, setStoreSettings] = useState({ name: "Loading...", logo: null, brand: '', manufacturerTitle: '', origin: '', nameColor: '#192A56', adminPassword: 'klm!44' });
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [language, setLanguage] = useState(
@@ -3866,9 +3925,6 @@ const App = () => {
   useEffect(() => {
     setLayout(window.innerWidth <= 768 ? 'gallery' : 'double');
   }, []);
-  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
-  const [passwordInput, setPasswordInput] = useState('');
-  const [passwordError, setPasswordError] = useState('');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [activeFilters, setActiveFilters] = useState({ seasons: [], collarTypes: [], seriesNames: [], genders: [], discounted: false });
   const [isMobileSearchVisible, setIsMobileSearchVisible] = useState(false);
@@ -3876,6 +3932,13 @@ const App = () => {
   const [activeShortId, setActiveShortId] = useState(null);
   const [adminActiveTab, setAdminActiveTab] = useState('products');
   const shareImageRef = useRef(null);
+
+  // New Auth State
+  const [session, setSession] = useState(null);
+  const [currentStore, setCurrentStore] = useState(null);
+  const [storeLoading, setStoreLoading] = useState(true);
+  const [authModal, setAuthModal] = useState({ isOpen: false, mode: 'login' });
+
 
   const isNewProduct = (createdAt) => {
     if (!createdAt) return false;
@@ -3885,16 +3948,30 @@ const App = () => {
     return (now.getTime() - productDate.getTime()) < oneWeek;
   };
   
-  const fetchData = async (preventLoader = false) => {
+  const fetchStoreData = async (storeId, preventLoader = false) => {
       if (!preventLoader) setLoading(true);
       try {
-          // Fetch Products with variants and series
-          const { data: productsData, error: productsError } = await db
-              .from('products')
-              .select('*, variants(*, series(*))')
-              .order('created_at', { ascending: false });
+          const commonQuery = (table) => db.from(table).select('*').eq('store_id', storeId);
+          
+          const [
+              { data: productsData, error: productsError },
+              { data: templatesData, error: templatesError },
+              { data: collarTypesData, error: collarTypesError },
+              { data: contentTemplatesData, error: contentTemplatesError },
+              { data: genderTemplatesData, error: genderTemplatesError },
+          ] = await Promise.all([
+              db.from('products').select('*, variants(*, series(*))').eq('store_id', storeId).order('created_at', { ascending: false }),
+              commonQuery('series_templates'),
+              commonQuery('collar_types').order('name'),
+              commonQuery('content_templates').order('name'),
+              commonQuery('gender_templates').order('name'),
+          ]);
 
           if (productsError) throw productsError;
+          if (templatesError) throw templatesError;
+          if (collarTypesError) throw collarTypesError;
+          if (contentTemplatesError) throw contentTemplatesError;
+          if (genderTemplatesError) throw genderTemplatesError;
           
           const formattedProducts = productsData.map((p) => ({
               ...p,
@@ -3917,95 +3994,64 @@ const App = () => {
               }))
           }));
           setProducts(formattedProducts);
-
-          // Fetch Series Templates
-          const { data: templatesData, error: templatesError } = await db.from('series_templates').select('*');
-          if (templatesError) throw templatesError;
-          const formattedTemplates = templatesData.map((t) => ({...t, id: String(t.id), name: String(t.name || ''), seriesNames: (t.series_names || []).map(String)}));
-          setSeriesTemplates(formattedTemplates);
+          setSeriesTemplates(templatesData.map((t) => ({...t, id: String(t.id), name: String(t.name || ''), seriesNames: (t.series_names || []).map(String)})));
+          setCollarTypes((collarTypesData || []).map((ct) => ({ ...ct, id: String(ct.id), name: String(ct.name || '') })));
+          setContentTemplates((contentTemplatesData || []).map((ct) => ({ ...ct, id: String(ct.id), name: String(ct.name || '') })));
+          setGenderTemplates((genderTemplatesData || []).map((gt) => ({ ...gt, id: String(gt.id), name: String(gt.name || '') })));
           
-          // Fetch Collar Types
-          const { data: collarTypesData, error: collarTypesError } = await db.from('collar_types').select('*').order('name');
-          if (collarTypesError) {
-              console.warn("Could not fetch collar types. Ensure 'collar_types' table exists.", collarTypesError);
-          } else {
-              setCollarTypes((collarTypesData || []).map((ct) => ({ ...ct, id: String(ct.id), name: String(ct.name || '') })));
-          }
-
-          // Fetch Content Templates
-          const { data: contentTemplatesData, error: contentTemplatesError } = await db.from('content_templates').select('*').order('name');
-          if (contentTemplatesError) {
-              console.warn("Could not fetch content templates. Ensure 'content_templates' table exists.", contentTemplatesError);
-          } else {
-              setContentTemplates((contentTemplatesData || []).map((ct) => ({ ...ct, id: String(ct.id), name: String(ct.name || '') })));
-          }
-
-          // Fetch Gender Templates
-          const { data: genderTemplatesData, error: genderTemplatesError } = await db.from('gender_templates').select('*').order('name');
-          if (genderTemplatesError) {
-              console.warn("Could not fetch gender templates. Ensure 'gender_templates' table exists.", genderTemplatesError);
-          } else {
-              setGenderTemplates((genderTemplatesData || []).map((gt) => ({ ...gt, id: String(gt.id), name: String(gt.name || '') })));
-          }
-          
-           // Fetch Store Settings
-          const { data: settingsData, error: settingsError } = await db.from('store_settings').select('*').eq('id', 1).single();
-          if (settingsError) throw settingsError;
-          if (settingsData) {
-              setStoreSettings({
-                  name: settingsData.name,
-                  logo: settingsData.logo,
-                  brand: settingsData.brand,
-                  manufacturerTitle: settingsData.manufacturer_title,
-                  origin: settingsData.origin,
-                  nameColor: settingsData.name_color,
-                  adminPassword: settingsData.admin_password || 'klm!44'
-              });
-          }
-
       } catch (error) {
-          console.error("Error fetching data:", error);
+          console.error("Error fetching store data:", error);
       } finally {
           if (!preventLoader) setLoading(false);
       }
   };
 
-  useEffect(() => {
-    const setupInitialData = async () => {
-        const collarTypesToAdd = [
-            { name: 'Polo' },
-            { name: 'Crew Neck' },
-            { name: 'Button Collar' },
-            { name: 'V-Neck' },
-            { name: 'Shirt Collar' },
-            { name: 'Mock Neck' },
-            { name: 'Cardigan' },
-        ];
-        
-        try {
-            const { data, count } = await db.from('collar_types').select('*', { count: 'exact', head: true });
-            if (count === 0) {
-                const { error: insertError } = await db.from('collar_types').insert(collarTypesToAdd);
-                if (insertError) throw insertError;
+   useEffect(() => {
+        // 1. Auth state listener
+        const { data: { subscription } } = db.auth.onAuthStateChange(async (_event, session) => {
+            setSession(session);
+            // If user logs out, reset the store
+            if (!session && currentStore) {
+                 const hostname = window.location.hostname;
+                 const parts = hostname.split('.');
+                 if (hostname !== 'localhost' && parts.length > 2) {
+                     window.location.href = `//${parts.slice(1).join('.')}`;
+                 } else {
+                     setCurrentStore(null);
+                     setProducts([]);
+                 }
             }
-        } catch (e) { console.error("Exception during initial collar type setup:", e); }
-        
-        const genderTemplatesToAdd = [
-            { name: 'Male' }, { name: 'Female' }, { name: 'Unisex' },
-            { name: 'Child' }, { name: 'Boy' }, { name: 'Girl' },
-        ];
-        try {
-            const { data, count } = await db.from('gender_templates').select('*', { count: 'exact', head: true });
-            if (count === 0) {
-                const { error: insertError } = await db.from('gender_templates').insert(genderTemplatesToAdd);
-                if (insertError) throw insertError;
+        });
+
+        // 2. Subdomain check and initial store fetch
+        const fetchStoreBySubdomain = async () => {
+            const hostname = window.location.hostname;
+            const parts = hostname.split('.');
+            let subdomain = null;
+
+            if (hostname === 'localhost' || parts.length < 3) {
+                // Root domain or localhost
+                setStoreLoading(false);
+                setLoading(false);
+                return;
+            } else {
+                subdomain = parts[0];
             }
-        } catch (e) { console.error("Exception during initial gender template setup:", e); }
+
+            if (subdomain) {
+                const { data: storeData, error } = await db.from('stores').select('*').eq('subdomain', subdomain).single();
+                if (storeData) {
+                    setCurrentStore(storeData);
+                    await fetchStoreData(storeData.id);
+                }
+            }
+            setStoreLoading(false);
+        };
         
-        await fetchData();
-    };
-    setupInitialData();
-  }, []);
+        fetchStoreBySubdomain();
+
+        return () => subscription.unsubscribe();
+    }, []);
   
   useEffect(() => {
       try {
@@ -4060,7 +4106,7 @@ const App = () => {
     const isIos = () => /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || ('standalone' in window.navigator && window.navigator.standalone === true);
 
-    if (isIos() && !isStandalone) {
+    if (currentStore && isIos() && !isStandalone) {
       const dismissedAt = localStorage.getItem('iosA2hsDismissed');
       let shouldShow = false;
       if (dismissedAt) {
@@ -4080,7 +4126,7 @@ const App = () => {
           return () => clearTimeout(timer);
       }
     }
-  }, []);
+  }, [currentStore]);
 
   const handleInstallClick = () => {
       if (!installPrompt) return;
@@ -4121,7 +4167,7 @@ const App = () => {
   }, [seriesTemplates]);
   
   const filteredProducts = useMemo(() => {
-    const sortedProducts = [...products].sort((a, b) => isNewProduct(b.created_at) - isNewProduct(a.created_at));
+    const sortedProducts = [...products].sort((a, b) => Number(isNewProduct(b.created_at)) - Number(isNewProduct(a.created_at)));
 
     const lowerCaseSearchTerm = searchTerm.toLowerCase();
     
@@ -4254,23 +4300,72 @@ const App = () => {
   const handleLanguageChange = (e) => setLanguage(e.target.value);
   
   const handleAdminToggle = () => {
-      if (isAdminView) {
-          setIsAdminView(false);
+      if (session && currentStore && session.user.id === currentStore.owner_id) {
+          setIsAdminView(!isAdminView);
       } else {
-          setIsPasswordModalOpen(true);
+          setAuthModal({ isOpen: true, mode: 'login' });
       }
   };
   
-  const handlePasswordSubmit = () => {
-      if (passwordInput === storeSettings.adminPassword) {
-          setIsAdminView(true);
-          setIsPasswordModalOpen(false);
-          setPasswordInput('');
-          setPasswordError('');
-      } else {
-          setPasswordError(t.incorrectPassword);
-      }
-  };
+    const handleLogin = async (email, password) => {
+        const { data, error } = await db.auth.signInWithPassword({ email, password });
+        if (error) {
+            alert(error.message);
+            return;
+        }
+        if (data.user) {
+            const { data: storeData, error: storeError } = await db.from('stores').select('*').eq('owner_id', data.user.id).single();
+            if (storeError) {
+                alert("Could not find a store associated with this account.");
+                await db.auth.signOut();
+            } else if (storeData) {
+                setAuthModal({ isOpen: false, mode: 'login' });
+                const { protocol, host } = window.location;
+                const domain = host.split('.').slice(-2).join('.');
+                window.location.href = `${protocol}//${storeData.subdomain}.${domain}`;
+            }
+        }
+    };
+    
+    const handleSignUp = async (email, password, storeName, subdomain) => {
+        const { data: existing, error: checkError } = await db.from('stores').select('id').eq('subdomain', subdomain).single();
+        if (existing) {
+            alert('Subdomain is already taken.');
+            return;
+        }
+
+        const { data, error } = await db.auth.signUp({ email, password });
+        if (error) {
+            alert(error.message);
+            return;
+        }
+
+        if (data.user) {
+            const { data: newStore, error: createStoreError } = await db.from('stores').insert({
+                name: storeName,
+                subdomain: subdomain,
+                owner_id: data.user.id,
+                name_color: '#192A56'
+            }).select().single();
+            
+            if (createStoreError) {
+                alert("Failed to create store. Please contact support.");
+                // Potentially delete the created user here for cleanup
+                console.error(createStoreError);
+                return;
+            }
+            
+            alert("Account created! Please check your email to verify your account and then log in.");
+            setAuthModal({ isOpen: false, mode: 'login' });
+        }
+    };
+
+    const handleLogout = async () => {
+        await db.auth.signOut();
+        setIsAdminView(false);
+        // The onAuthStateChange listener will handle the redirect
+    };
+
 
   const handleLayoutToggle = () => {
     if (!isAdminView) {
@@ -4300,7 +4395,7 @@ const App = () => {
               cartItems: cartItems,
               totals: totals,
               t: t,
-              storeSettings: storeSettings,
+              store: currentStore,
               cartStats: cartStats,
             });
 
@@ -4320,7 +4415,7 @@ const App = () => {
                    const file = new File([blob], 'order.jpg', { type: 'image/jpeg' });
                    try {
                      await navigator.share({
-                        title: `${storeSettings.name} Order`,
+                        title: `${currentStore.name} Order`,
                         files: [file],
                      });
                    } catch (error) {
@@ -4392,7 +4487,7 @@ const App = () => {
             const ws = XLSX.utils.json_to_sheet(data);
             XLSX.utils.book_append_sheet(wb, ws, "Order");
 
-            XLSX.writeFile(wb, `${storeSettings.name}_Order_${new Date().toLocaleDateString()}.xlsx`);
+            XLSX.writeFile(wb, `${currentStore.name}_Order_${new Date().toLocaleDateString()}.xlsx`);
 
         } catch (error) {
             console.error("Failed to generate Excel file:", error);
@@ -4406,148 +4501,162 @@ const App = () => {
         setLayout(newLayout);
     };
     
-    const handleOpenShortsPlayer = (productId = null) => {
-        setActiveShortId(productId || shortsItems[0]?.product.id);
+    const handleOpenShorts = (productId) => {
+        setActiveShortId(productId);
         setIsShortsPlayerOpen(true);
     };
 
-  if (loading) {
-    return React.createElement("div", { className: "loader" }, "Loading...");
-  }
+    if (storeLoading) {
+        return React.createElement("div", { className: "loader" }, "Loading store...");
+    }
+    
+    if (!currentStore) {
+        return React.createElement(React.Fragment, null,
+            React.createElement(LandingPage, {
+                onShowAuth: (mode) => setAuthModal({ isOpen: true, mode: mode }),
+                t: t
+            }),
+            React.createElement(AuthModal, {
+                isOpen: authModal.isOpen,
+                initialMode: authModal.mode,
+                onClose: () => setAuthModal({ isOpen: false, mode: 'login' }),
+                onLogin: handleLogin,
+                onSignUp: handleSignUp,
+                t: t
+            })
+        );
+    }
+  
+    if (isAdminView) {
+      return React.createElement(AdminPanel, { 
+        products, 
+        seriesTemplates, 
+        collarTypes,
+        contentTemplates,
+        genderTemplates,
+        currentStore,
+        onFetchData: () => fetchStoreData(currentStore.id, true), 
+        t,
+        activeTab: adminActiveTab,
+        onActiveTabChange: setAdminActiveTab,
+        onExit: () => setIsAdminView(false),
+        onLogout: handleLogout
+      });
+    }
+
+    const mainContent = loading ? 
+        React.createElement("div", { className: "loader" }, "Loading...") :
+        (layout === 'gallery' ? 
+            React.createElement(GalleryView, { 
+                variants: filteredVariantsForGallery, 
+                onBulkAddToCart: handleBulkAddToCart,
+                onOpenFilters: () => setIsFilterOpen(true),
+                activeFilters: activeFilters,
+                t,
+                seriesNameToTemplateMap,
+                store: currentStore,
+                onSelectOptions: handleOpenModal
+            }) :
+            React.createElement("div", { className: `product-grid layout-${layout}` },
+                filteredProducts.map(product => 
+                    React.createElement(ProductCard, { key: product.id, product, onSelectOptions: handleOpenModal, t })
+                )
+            )
+        );
+
 
   return (
     React.createElement(React.Fragment, null,
-      React.createElement("header", { className: "app-header" },
-        React.createElement("div", { className: "container" },
-          React.createElement("div", { className: "header-content" },
-            React.createElement("div", { className: "store-info" },
-                storeSettings.logo && React.createElement("img", { src: storeSettings.logo, alt: "Store Logo", className: "store-logo-img", onClick: handleAdminToggle }),
-                React.createElement("h1", { className: "store-logo", onClick: handleLayoutToggle }, storeSettings.name),
-                React.createElement("h1", { className: "store-name-mobile-gallery", onClick: () => window.location.reload(), style: { color: storeSettings.nameColor || '#192A56' } }, storeSettings.name)
-            ),
-            !isAdminView && (
-                React.createElement("div", { className: `search-bar desktop-search-bar ${isMobileSearchVisible ? 'mobile-search-bar-active' : ''}` },
-                    isMobileSearchVisible && React.createElement("button", { className: "mobile-search-back-btn", onClick: () => setIsMobileSearchVisible(false) }, React.createElement(ArrowLeftIcon, null)),
+      React.createElement("header", { className: `app-header ${layout === 'gallery' && 'gallery-view-mobile'}` },
+        React.createElement("div", { className: `container header-content ${isMobileSearchVisible ? 'mobile-search-bar-active' : ''}` },
+            isMobileSearchVisible ? (
+                 React.createElement(React.Fragment, null,
+                    React.createElement("button", { className: "mobile-search-back-btn", onClick: () => setIsMobileSearchVisible(false) }, React.createElement(ArrowLeftIcon, null)),
                     React.createElement("div", { className: "search-input-wrapper" },
-                        React.createElement(SearchIcon, { className: "search-icon" }),
-                        React.createElement("input", {
-                            type: "text",
-                            placeholder: t.searchPlaceholder,
-                            value: searchTerm,
-                            onChange: (e) => setSearchTerm(e.target.value)
-                        })
+                        React.createElement("span", { className: "search-icon" }, React.createElement(SearchIcon, null)),
+                        React.createElement("input", { type: "text", placeholder: t.searchPlaceholder, value: searchTerm, onChange: (e) => setSearchTerm(e.target.value), autoFocus: true })
                     )
                 )
-            ),
-            React.createElement("div", { className: "header-controls" },
-              !isAdminView && (
-                  React.createElement(React.Fragment, null,
-                    React.createElement("button", { className: "mobile-search-toggle", onClick: () => setIsMobileSearchVisible(true) }, React.createElement(SearchIcon, null)),
-                    shortsItems.length > 0 && React.createElement("button", { className: "btn-secondary shorts-toggle-btn", onClick: () => handleOpenShortsPlayer() }, React.createElement(VideoIcon, null)),
-                    React.createElement("div", { className: "view-toggle" },
-                        React.createElement("button", { className: layout === 'double' ? 'active' : '', onClick: () => handleLayoutChange('double'), title: "Double Grid" }, React.createElement(ViewGridIcon, null)),
-                        React.createElement("button", { className: layout === 'gallery' ? 'active' : '', onClick: () => handleLayoutChange('gallery'), title: t.galleryView }, React.createElement(ViewGalleryIcon, null))
+            ) : (
+                React.createElement(React.Fragment, null,
+                    React.createElement("div", { className: "store-info" },
+                        currentStore.logo && React.createElement("img", { src: currentStore.logo, alt: `${currentStore.name} Logo`, className: "store-logo-img", onClick: handleAdminToggle }),
+                        React.createElement("h1", { 
+                            className: "store-logo", 
+                            onClick: handleAdminToggle,
+                            style: { color: currentStore.name_color || '#192A56' }
+                        }, currentStore.name)
+                    ),
+                    React.createElement("div", { className: "search-bar desktop-search-bar" },
+                        React.createElement("span", { className: "search-icon" }, React.createElement(SearchIcon, null)),
+                        React.createElement("input", { type: "text", placeholder: t.searchPlaceholder, value: searchTerm, onChange: (e) => setSearchTerm(e.target.value) })
+                    ),
+                    React.createElement("div", { className: "header-controls" },
+                        shortsItems.length > 0 && React.createElement("button", { className: "shorts-toggle-btn", onClick: () => handleOpenShorts(shortsItems[0].product.id), title: "View Shorts" }, React.createElement(VideoIcon, null)),
+                        React.createElement("button", { className: "mobile-search-toggle", onClick: () => setIsMobileSearchVisible(true) }, React.createElement(SearchIcon, null)),
+                        React.createElement("div", { className: "language-switcher" },
+                            React.createElement("select", { value: language, onChange: handleLanguageChange },
+                                React.createElement("option", { value: "en" }, "EN"),
+                                React.createElement("option", { value: "tr" }, "TR"),
+                                React.createElement("option", { value: "ru" }, "RU")
+                            )
+                        ),
+                        React.createElement("div", { className: "view-toggle" },
+                            React.createElement("button", { className: layout === 'double' ? 'active' : '', onClick: () => handleLayoutChange('double') }, React.createElement(ViewGridIcon, null)),
+                            React.createElement("button", { className: layout === 'gallery' ? 'active' : '', onClick: () => handleLayoutChange('gallery') }, React.createElement(ViewGalleryIcon, null))
+                        ),
+                        React.createElement("button", { className: "admin-toggle-btn", onClick: handleAdminToggle }, React.createElement(AdminIcon, null), React.createElement("span", null, t.admin)),
+                        React.createElement("button", { className: "cart-button", onClick: () => setIsCartOpen(true) },
+                            React.createElement(CartIcon, null),
+                            React.createElement("span", null, t.cart),
+                            cartItems.length > 0 && React.createElement("span", { className: "cart-count" }, cartItems.length)
+                        )
                     )
-                  )
-              ),
-              React.createElement("div", { className: "language-switcher" },
-                React.createElement("select", { value: language, onChange: handleLanguageChange },
-                  React.createElement("option", { value: "en" }, "EN"),
-                  React.createElement("option", { value: "tr" }, "TR"),
-                  React.createElement("option", { value: "ru" }, "RU")
-                )
-              ),
-              !isAdminView && (
-                React.createElement("button", { className: "cart-button", onClick: () => setIsCartOpen(true) },
-                    React.createElement(CartIcon, null),
-                    React.createElement("span", null, t.cart),
-                    cartItems.length > 0 && React.createElement("span", { className: "cart-count" }, cartItems.length)
-                )
-              )
+                 )
             )
-          )
         )
       ),
       React.createElement("main", null,
         React.createElement("div", { className: "container" },
-          isAdminView ? (
-            React.createElement(AdminPanel, { 
-                products, 
-                seriesTemplates, 
-                storeSettings,
-                collarTypes,
-                contentTemplates,
-                genderTemplates,
-                onFetchData: fetchData,
-                t,
-                activeTab: adminActiveTab,
-                onActiveTabChange: setAdminActiveTab,
-                onExit: () => setIsAdminView(false)
-             })
-          ) : (
-            layout === 'gallery' ? (
-                 React.createElement(GalleryView, {
-                    variants: filteredVariantsForGallery,
-                    onBulkAddToCart: handleBulkAddToCart,
-                    onOpenFilters: () => setIsFilterOpen(true),
-                    t: t,
-                    activeFilters: activeFilters,
-                    seriesNameToTemplateMap: seriesNameToTemplateMap,
-                    storeSettings: storeSettings,
-                    onSelectOptions: (product, variant) => handleOpenModal(product, variant)
-                })
-            ) : (
-                React.createElement("div", { className: `product-grid layout-${layout}` },
-                    filteredProducts.map(product =>
-                        React.createElement(ProductCard, {
-                            key: product.id,
-                            product: product,
-                            onSelectOptions: (p, v) => handleOpenModal(p, v),
-                            t: t
-                        })
-                    )
-                )
-            )
-          )
+          mainContent
         )
       ),
-      React.createElement(SeriesSelectionModal, {
-        isOpen: isModalOpen,
-        onClose: handleCloseModal,
-        productInfo: modalData?.product,
-        productVariant: modalData?.variant,
-        onBulkAddToCart: handleBulkAddToCart,
-        t: t,
+      React.createElement(CartSidebar, { 
+          isOpen: isCartOpen, 
+          onClose: () => setIsCartOpen(false), 
+          cartItems, 
+          onRemoveItem: handleRemoveFromCart, 
+          onUpdateQuantity: handleUpdateQuantity,
+          onShareOrder: handleShareOrder,
+          isSharing: isSharing,
+          cartStats: cartStats,
+          onDownloadExcel: handleDownloadExcel,
+          isDownloadingExcel: isDownloadingExcel,
+          t
       }),
-      React.createElement(CartSidebar, {
-        isOpen: isCartOpen,
-        onClose: () => setIsCartOpen(false),
-        cartItems: cartItems,
-        onRemoveItem: handleRemoveFromCart,
-        onUpdateQuantity: handleUpdateQuantity,
-        onShareOrder: handleShareOrder,
-        isSharing: isSharing,
-        cartStats: cartStats,
-        t: t,
-        onDownloadExcel: handleDownloadExcel,
-        isDownloadingExcel: isDownloadingExcel,
+      isModalOpen && React.createElement(SeriesSelectionModal, {
+          isOpen: isModalOpen,
+          onClose: handleCloseModal,
+          productInfo: modalData.product,
+          productVariant: modalData.variant,
+          onBulkAddToCart: handleBulkAddToCart,
+          t
       }),
-      React.createElement(AdminPasswordModal, {
-          isOpen: isPasswordModalOpen,
-          onClose: () => setIsPasswordModalOpen(false),
-          onSubmit: handlePasswordSubmit,
-          password: passwordInput,
-          setPassword: setPasswordInput,
-          error: passwordError,
+      React.createElement(AuthModal, {
+          isOpen: authModal.isOpen,
+          initialMode: authModal.mode,
+          onClose: () => setAuthModal({ isOpen: false, mode: 'login' }),
+          onLogin: handleLogin,
+          onSignUp: handleSignUp,
           t: t
       }),
       React.createElement(FilterSidebar, {
-          isOpen: isFilterOpen,
-          onClose: () => setIsFilterOpen(false),
-          products: products,
-          activeFilters: activeFilters,
-          setActiveFilters: setActiveFilters,
-          t: t
+        isOpen: isFilterOpen,
+        onClose: () => setIsFilterOpen(false),
+        products: products,
+        activeFilters: activeFilters,
+        setActiveFilters: setActiveFilters,
+        t: t
       }),
       React.createElement(ShortsPlayer, {
           isOpen: isShortsPlayerOpen,
@@ -4555,20 +4664,21 @@ const App = () => {
           activeShortId: activeShortId,
           onClose: () => setIsShortsPlayerOpen(false)
       }),
-      isA2hsBannerVisible && installPrompt && React.createElement(AddToHomeScreenBanner, {
-          onInstall: handleInstallClick,
+      isA2hsBannerVisible && installPrompt && React.createElement(AddToHomeScreenBanner, { 
+          onInstall: handleInstallClick, 
           onDismiss: handleDismissBanner,
-          storeSettings: storeSettings,
-          t: t
+          store: currentStore,
+          t 
       }),
-      showIosInstallHelp && React.createElement(IosInstallBanner, {
-          onDismiss: handleIosDismiss,
-          storeSettings: storeSettings,
-          t: t
+      showIosInstallHelp && React.createElement(IosInstallBanner, { 
+          onDismiss: handleIosDismiss, 
+          store: currentStore,
+          t
       })
     )
   );
 };
 
-const root = createRoot(document.getElementById('root'));
-root.render(React.createElement(App));
+const container = document.getElementById('root');
+const root = createRoot(container);
+root.render(React.createElement(App, null));
