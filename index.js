@@ -4037,21 +4037,14 @@ const App = () => {
       e.preventDefault();
       setInstallPrompt(e);
 
-      const dismissedData = localStorage.getItem('a2hsDismissed');
-      if (dismissedData) {
-        try {
-            const { dismissedAt } = JSON.parse(dismissedData);
-            const threeHoursInMillis = 3 * 60 * 60 * 1000;
-            if (Date.now() - dismissedAt > threeHoursInMillis) {
-                // More than 3 hours have passed, show it again
-                setIsA2hsBannerVisible(true);
-            }
-        } catch (error) {
-            // If data is corrupt, default to showing the banner
-            setIsA2hsBannerVisible(true);
-        }
+      const dismissedAt = localStorage.getItem('a2hsDismissed');
+      if (dismissedAt) {
+          const dismissedTimestamp = parseInt(dismissedAt, 10);
+          const threeHoursInMillis = 3 * 60 * 60 * 1000;
+          if (!isNaN(dismissedTimestamp) && (Date.now() - dismissedTimestamp > threeHoursInMillis)) {
+              setIsA2hsBannerVisible(true);
+          }
       } else {
-          // Never dismissed, show it
           setIsA2hsBannerVisible(true);
       }
     };
@@ -4067,13 +4060,27 @@ const App = () => {
     const isIos = () => /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || ('standalone' in window.navigator && window.navigator.standalone === true);
 
-    if (isIos() && !isStandalone && !localStorage.getItem('iosA2hsDismissed')) {
-      const timer = setTimeout(() => {
-        setShowIosInstallHelp(true);
-      }, 3000);
-      return () => clearTimeout(timer);
+    if (isIos() && !isStandalone) {
+      const dismissedAt = localStorage.getItem('iosA2hsDismissed');
+      let shouldShow = false;
+      if (dismissedAt) {
+          const dismissedTimestamp = parseInt(dismissedAt, 10);
+          const threeHoursInMillis = 3 * 60 * 60 * 1000;
+          if (!isNaN(dismissedTimestamp) && (Date.now() - dismissedTimestamp > threeHoursInMillis)) {
+              shouldShow = true;
+          }
+      } else {
+          shouldShow = true;
+      }
+      
+      if (shouldShow) {
+          const timer = setTimeout(() => {
+              setShowIosInstallHelp(true);
+          }, 3000);
+          return () => clearTimeout(timer);
+      }
     }
-}, []);
+  }, []);
 
   const handleInstallClick = () => {
       if (!installPrompt) return;
@@ -4090,12 +4097,12 @@ const App = () => {
   };
 
   const handleDismissBanner = () => {
-      localStorage.setItem('a2hsDismissed', Date.now());
+      localStorage.setItem('a2hsDismissed', Date.now().toString());
       setIsA2hsBannerVisible(false);
   };
   
   const handleIosDismiss = () => {
-    localStorage.setItem('iosA2hsDismissed', Date.now());
+    localStorage.setItem('iosA2hsDismissed', Date.now().toString());
     setShowIosInstallHelp(false);
   };
 
