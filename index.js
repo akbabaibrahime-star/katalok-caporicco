@@ -180,8 +180,6 @@ const translations = {
     fillAllPasswordFields: "Please fill all password fields.",
     newPasswordsDoNotMatch: "New passwords do not match.",
     currentPasswordIncorrect: "Current password is incorrect.",
-    tenantNotFound: "Store not found.",
-    loadingStore: "Loading Store...",
   },
   tr: {
     searchPlaceholder: "Ürün adı veya koduyla ara...",
@@ -341,8 +339,6 @@ const translations = {
     fillAllPasswordFields: "Lütfen tüm şifre alanlarını doldurun.",
     newPasswordsDoNotMatch: "Yeni şifreler eşleşmiyor.",
     currentPasswordIncorrect: "Mevcut şifre yanlış.",
-    tenantNotFound: "Mağaza bulunamadı.",
-    loadingStore: "Mağaza Yükleniyor...",
   },
   ru: {
     searchPlaceholder: "Поиск по названию или коду товара...",
@@ -502,8 +498,6 @@ const translations = {
     fillAllPasswordFields: "Пожалуйста, заполните все поля пароля.",
     newPasswordsDoNotMatch: "Новые пароли не совпадают.",
     currentPasswordIncorrect: "Текущий пароль неверен.",
-    tenantNotFound: "Магазин не найден.",
-    loadingStore: "Загрузка магазина...",
   },
 };
 
@@ -1127,7 +1121,7 @@ const AdminPasswordModal = ({ isOpen, onClose, onSubmit, password, setPassword, 
 };
 
 
-const CollarTypeForm = ({ type: initialType, onSave, onCancel, t, tenantId }) => {
+const CollarTypeForm = ({ type: initialType, onSave, onCancel, t }) => {
     const [type, setType] = useState(initialType);
 
     return (
@@ -1145,21 +1139,20 @@ const CollarTypeForm = ({ type: initialType, onSave, onCancel, t, tenantId }) =>
     );
 };
 
-const CollarTypesManager = ({ collarTypes, onFetchData, t, tenantId }) => {
+const CollarTypesManager = ({ collarTypes, onFetchData, t }) => {
     const [editingType, setEditingType] = useState(null);
 
     const handleSave = async (typeToSave) => {
         const { error } = await db.from('collar_types').upsert({
             id: typeToSave.id.startsWith('new_') ? undefined : typeToSave.id,
             name: typeToSave.name,
-            tenant_id: tenantId
         });
 
         if (error) {
             console.error("Error saving collar type:", error);
             alert(`Failed to save collar type: ${error.message}`);
         } else {
-            onFetchData(true);
+            onFetchData();
             setEditingType(null);
         }
     };
@@ -1171,17 +1164,17 @@ const CollarTypesManager = ({ collarTypes, onFetchData, t, tenantId }) => {
                 console.error("Error deleting collar type:", error);
                 alert(`Failed to delete collar type: ${error.message}`);
             } else {
-                onFetchData(true);
+                onFetchData();
             }
         }
     };
 
     const handleAddNew = () => {
-        setEditingType({ id: `new_${generateId()}`, name: '', tenant_id: tenantId });
+        setEditingType({ id: `new_${generateId()}`, name: '' });
     };
 
     if (editingType) {
-        return React.createElement(CollarTypeForm, { type: editingType, onSave: handleSave, onCancel: () => setEditingType(null), t: t, tenantId: tenantId });
+        return React.createElement(CollarTypeForm, { type: editingType, onSave: handleSave, onCancel: () => setEditingType(null), t: t });
     }
 
     return (
@@ -1225,21 +1218,20 @@ const ContentTemplateForm = ({ template: initialTemplate, onSave, onCancel, t })
     );
 };
 
-const ContentManager = ({ contentTemplates, onFetchData, t, tenantId }) => {
+const ContentManager = ({ contentTemplates, onFetchData, t }) => {
     const [editingTemplate, setEditingTemplate] = useState(null);
 
     const handleSave = async (templateToSave) => {
         const { error } = await db.from('content_templates').upsert({
             id: templateToSave.id.startsWith('new_') ? undefined : templateToSave.id,
             name: templateToSave.name,
-            tenant_id: tenantId
         });
 
         if (error) {
             console.error("Error saving content template:", error);
             alert(`Failed to save content template: ${error.message}`);
         } else {
-            onFetchData(true);
+            onFetchData();
             setEditingTemplate(null);
         }
     };
@@ -1251,13 +1243,13 @@ const ContentManager = ({ contentTemplates, onFetchData, t, tenantId }) => {
                 console.error("Error deleting content template:", error);
                 alert(`Failed to delete content template: ${error.message}`);
             } else {
-                onFetchData(true);
+                onFetchData();
             }
         }
     };
 
     const handleAddNew = () => {
-        setEditingTemplate({ id: `new_${generateId()}`, name: '', tenant_id: tenantId });
+        setEditingTemplate({ id: `new_${generateId()}`, name: '' });
     };
 
     if (editingTemplate) {
@@ -1305,21 +1297,20 @@ const GenderTemplateForm = ({ template: initialTemplate, onSave, onCancel, t }) 
     );
 };
 
-const GenderManager = ({ genderTemplates, onFetchData, t, tenantId }) => {
+const GenderManager = ({ genderTemplates, onFetchData, t }) => {
     const [editingTemplate, setEditingTemplate] = useState(null);
 
     const handleSave = async (templateToSave) => {
         const { error } = await db.from('gender_templates').upsert({
             id: templateToSave.id.startsWith('new_') ? undefined : templateToSave.id,
             name: templateToSave.name,
-            tenant_id: tenantId
         });
 
         if (error) {
             console.error("Error saving gender template:", error);
             alert(`Failed to save gender template: ${error.message}`);
         } else {
-            onFetchData(true);
+            onFetchData();
             setEditingTemplate(null);
         }
     };
@@ -1331,13 +1322,13 @@ const GenderManager = ({ genderTemplates, onFetchData, t, tenantId }) => {
                 console.error("Error deleting gender template:", error);
                 alert(`Failed to delete gender template: ${error.message}`);
             } else {
-                onFetchData(true);
+                onFetchData();
             }
         }
     };
 
     const handleAddNew = () => {
-        setEditingTemplate({ id: `new_${generateId()}`, name: '', tenant_id: tenantId });
+        setEditingTemplate({ id: `new_${generateId()}`, name: '' });
     };
 
     if (editingTemplate) {
@@ -1368,7 +1359,7 @@ const GenderManager = ({ genderTemplates, onFetchData, t, tenantId }) => {
 };
 
 
-const ProductForm = ({ product: initialProduct, seriesTemplates, collarTypes, contentTemplates, genderTemplates, onSave, onCancel, t, tenantId }) => {
+const ProductForm = ({ product: initialProduct, seriesTemplates, collarTypes, contentTemplates, genderTemplates, onSave, onCancel, t }) => {
     const [product, setProduct] = useState(JSON.parse(JSON.stringify(initialProduct)));
     const [uploadingVideo, setUploadingVideo] = useState({ active: false, type: null, index: null });
     const [openTemplateDropdown, setOpenTemplateDropdown] = useState(null);
@@ -1535,7 +1526,7 @@ const ProductForm = ({ product: initialProduct, seriesTemplates, collarTypes, co
         const file = e.target.files?.[0];
         if (!file) return;
 
-        const filePath = `${tenantId}/${Date.now()}-${file.name}`;
+        const filePath = `${Date.now()}-${file.name}`;
         const { error } = await db.storage.from('product-images').upload(filePath, file);
         
         if (error) {
@@ -1556,7 +1547,7 @@ const ProductForm = ({ product: initialProduct, seriesTemplates, collarTypes, co
 
         setUploadingVideo({ active: true, type: variantIndex === null ? 'main' : 'variant', index: variantIndex });
 
-        const filePath = `public/${tenantId}/${Date.now()}-${file.name.replace(/\s/g, '_')}`;
+        const filePath = `public/${Date.now()}-${file.name.replace(/\s/g, '_')}`;
         const { error } = await db.storage.from('product-videos').upload(filePath, file);
 
         if (error) {
@@ -1823,7 +1814,7 @@ const ProductForm = ({ product: initialProduct, seriesTemplates, collarTypes, co
     );
 };
 
-const ProductManager = ({ products, seriesTemplates, collarTypes, contentTemplates, genderTemplates, onFetchData, t, tenantId }) => {
+const ProductManager = ({ products, seriesTemplates, collarTypes, contentTemplates, genderTemplates, onFetchData, t }) => {
     const [editingProduct, setEditingProduct] = useState(null);
 
     const handleAddNew = () => {
@@ -1834,7 +1825,6 @@ const ProductManager = ({ products, seriesTemplates, collarTypes, contentTemplat
             video_url: '',
             discountPercentage: 0,
             variants: [],
-            tenant_id: tenantId,
         };
         setEditingProduct(newProduct);
     };
@@ -1850,7 +1840,7 @@ const ProductManager = ({ products, seriesTemplates, collarTypes, contentTemplat
                 console.error("Error deleting product:", error);
                 alert(`Failed to delete product: ${error.message}`);
             } else {
-                onFetchData(true);
+                onFetchData();
             }
         }
     };
@@ -1870,7 +1860,6 @@ const ProductManager = ({ products, seriesTemplates, collarTypes, contentTemplat
                     content: productToSave.content,
                     gender: productToSave.gender,
                     discount_percentage: productToSave.discountPercentage,
-                    tenant_id: tenantId,
                 })
                 .select()
                 .single();
@@ -1932,7 +1921,7 @@ const ProductManager = ({ products, seriesTemplates, collarTypes, contentTemplat
             }
 
             alert("Product saved successfully!");
-            onFetchData(true);
+            onFetchData();
             setEditingProduct(null);
 
         } catch (error) {
@@ -1951,8 +1940,7 @@ const ProductManager = ({ products, seriesTemplates, collarTypes, contentTemplat
           genderTemplates: genderTemplates,
           onSave: handleSave, 
           onCancel: () => setEditingProduct(null), 
-          t: t,
-          tenantId: tenantId,
+          t: t 
         });
     }
 
@@ -2040,7 +2028,7 @@ const QuickStockManager = ({ products, onFetchData, t }) => {
                 console.error("Stock update error:", error);
             } else {
                 alert(t.stockUpdatedSuccess);
-                onFetchData(true);
+                onFetchData();
                 setStockInputs(prev => ({ ...prev, [variant.id]: '' }));
             }
             setIsUpdating(null);
@@ -2150,7 +2138,7 @@ const URLVideoUploader = ({ product, onUpdate, t }) => {
     );
 };
 
-const ShortsManager = ({ products, onFetchData, t, tenantId }) => {
+const ShortsManager = ({ products, onFetchData, t }) => {
     const [searchQuery, setSearchQuery] = useState('');
     const [uploadingId, setUploadingId] = useState(null);
 
@@ -2181,7 +2169,7 @@ const ShortsManager = ({ products, onFetchData, t, tenantId }) => {
 
         setUploadingId(product.id);
 
-        const filePath = `public/${tenantId}/${Date.now()}-${file.name.replace(/\s/g, '_')}`;
+        const filePath = `public/${Date.now()}-${file.name.replace(/\s/g, '_')}`;
         const { error: uploadError } = await db.storage.from('product-videos').upload(filePath, file);
 
         if (uploadError) {
@@ -2288,22 +2276,21 @@ const ShortsManager = ({ products, onFetchData, t, tenantId }) => {
 };
 
 
-const SeriesTemplatesManager = ({ templates, onFetchData, t, tenantId }) => {
+const SeriesTemplatesManager = ({ templates, onFetchData, t }) => {
     const [editingTemplate, setEditingTemplate] = useState(null);
 
     const handleSave = async (templateToSave) => {
         const { error } = await db.from('series_templates').upsert({
             id: templateToSave.id.startsWith('new_') ? undefined : templateToSave.id,
             name: templateToSave.name,
-            series_names: templateToSave.seriesNames,
-            tenant_id: tenantId
+            series_names: templateToSave.seriesNames
         });
 
         if (error) {
             console.error("Error saving template:", error);
             alert(`Failed to save template: ${error.message}`);
         } else {
-            onFetchData(true);
+            onFetchData();
             setEditingTemplate(null);
         }
     };
@@ -2315,13 +2302,13 @@ const SeriesTemplatesManager = ({ templates, onFetchData, t, tenantId }) => {
                 console.error("Error deleting template:", error);
                 alert(`Failed to delete template: ${error.message}`);
             } else {
-                onFetchData(true);
+                onFetchData();
             }
         }
     };
 
     const handleAddNew = () => {
-        setEditingTemplate({ id: `new_${generateId()}`, name: '', seriesNames: [], tenant_id: tenantId });
+        setEditingTemplate({ id: `new_${generateId()}`, name: '', seriesNames: [] });
     };
 
     if (editingTemplate) {
@@ -2379,26 +2366,19 @@ const TemplateForm = ({ template: initialTemplate, onSave, onCancel, t }) => {
     );
 };
 
-const StoreSettingsEditor = ({ settings, onFetchData, t, tenant }) => {
+const StoreSettingsEditor = ({ settings, onFetchData, t }) => {
     const [currentSettings, setCurrentSettings] = useState(settings);
-    const [currentTenant, setCurrentTenant] = useState(tenant);
     const [passwordFields, setPasswordFields] = useState({ current: '', newPass: '', confirmPass: '' });
 
     useEffect(() => {
         setCurrentSettings(settings);
-        setCurrentTenant(tenant);
-    }, [settings, tenant]);
+    }, [settings]);
 
     const handleSettingChange = (e) => {
         const { name, value } = e.target;
         setCurrentSettings((s) => ({ ...s, [name]: value }));
     };
 
-    const handleTenantChange = async (e) => {
-        const { name, value } = e.target;
-        setCurrentTenant(t => ({...t, [name]: value }));
-    };
-    
     const handlePasswordInputChange = (e) => {
         const { name, value } = e.target;
         setPasswordFields(p => ({ ...p, [name]: value }));
@@ -2419,14 +2399,14 @@ const StoreSettingsEditor = ({ settings, onFetchData, t, tenant }) => {
             return;
         }
 
-        const { error } = await db.from('store_settings').update({ admin_password: newPass }).eq('tenant_id', tenant.id);
+        const { error } = await db.from('store_settings').update({ admin_password: newPass }).eq('id', 1);
 
         if (error) {
             alert(`${t.passwordChangeFailed}: ${error.message}`);
         } else {
             alert(t.passwordChangedSuccess);
             setPasswordFields({ current: '', newPass: '', confirmPass: '' });
-            onFetchData(true);
+            onFetchData();
         }
     };
 
@@ -2438,36 +2418,29 @@ const StoreSettingsEditor = ({ settings, onFetchData, t, tenant }) => {
         reader.onloadend = () => {
             if (typeof reader.result === 'string') {
                 const logoDataUrl = reader.result;
-                setCurrentTenant((t) => ({ ...t, logo: logoDataUrl }));
+                setCurrentSettings((s) => ({ ...s, logo: logoDataUrl }));
             }
         };
         reader.readAsDataURL(file);
     };
     
     const handleSave = async () => {
-        try {
-            // Update tenants table
-            const { error: tenantError } = await db.from('tenants').update({
-                name: currentTenant.name,
-                logo: currentTenant.logo,
-            }).eq('id', tenant.id);
-            if (tenantError) throw tenantError;
+        const { name, logo, brand, manufacturerTitle, origin, nameColor } = currentSettings;
+        const { error } = await db.from('store_settings').update({
+            name,
+            logo,
+            brand,
+            manufacturer_title: manufacturerTitle,
+            origin,
+            name_color: nameColor
+        }).eq('id', 1);
 
-            // Update store_settings table
-            const { brand, manufacturerTitle, origin, nameColor } = currentSettings;
-            const { error: settingsError } = await db.from('store_settings').update({
-                brand,
-                manufacturer_title: manufacturerTitle,
-                origin,
-                name_color: nameColor
-            }).eq('tenant_id', tenant.id);
-             if (settingsError) throw settingsError;
-
-            alert("Settings saved!");
-            onFetchData(true);
-        } catch (error) {
+        if (error) {
             alert(`Failed to save settings: ${error.message}`);
             console.error(error);
+        } else {
+            alert("Settings saved!");
+            onFetchData();
         }
     };
 
@@ -2478,7 +2451,7 @@ const StoreSettingsEditor = ({ settings, onFetchData, t, tenant }) => {
             ),
             React.createElement("div", { className: "form-group" },
                 React.createElement("label", null, t.storeNameLabel),
-                React.createElement("input", { type: "text", name: "name", value: currentTenant.name || '', onChange: handleTenantChange })
+                React.createElement("input", { type: "text", name: "name", value: currentSettings.name || '', onChange: handleSettingChange })
             ),
             React.createElement("div", { className: "form-group" },
                 React.createElement("label", null, t.storeNameColor),
@@ -2499,7 +2472,7 @@ const StoreSettingsEditor = ({ settings, onFetchData, t, tenant }) => {
             React.createElement("div", { className: "form-group" },
                 React.createElement("label", null, t.storeLogoLabel),
                 React.createElement("div", { className: "image-upload-container" },
-                    currentTenant.logo && React.createElement("img", { src: currentTenant.logo, alt: "Logo Preview", className: "logo-preview" }),
+                    currentSettings.logo && React.createElement("img", { src: currentSettings.logo, alt: "Logo Preview", className: "logo-preview" }),
                     React.createElement("input", { type: "file", id: "logoUpload", style: { display: 'none' }, accept: "image/*", onChange: handleLogoUpload }),
                     React.createElement("label", { htmlFor: "logoUpload", className: "btn-secondary" }, t.uploadLogo)
                 )
@@ -2529,7 +2502,7 @@ const StoreSettingsEditor = ({ settings, onFetchData, t, tenant }) => {
 };
 
 
-const AdminPanel = ({ products, seriesTemplates, storeSettings, collarTypes, contentTemplates, genderTemplates, onFetchData, t, activeTab, onActiveTabChange, onExit, tenant }) => {
+const AdminPanel = ({ products, seriesTemplates, storeSettings, collarTypes, contentTemplates, genderTemplates, onFetchData, t, activeTab, onActiveTabChange, onExit }) => {
     return (
         React.createElement("div", { className: "admin-panel" },
              React.createElement("div", { className: "admin-header" },
@@ -2544,21 +2517,21 @@ const AdminPanel = ({ products, seriesTemplates, storeSettings, collarTypes, con
                 React.createElement("button", { onClick: () => onActiveTabChange('settings'), className: activeTab === 'settings' ? 'active' : '' }, t.storeSettings)
             ),
             React.createElement("div", { className: "admin-content" },
-                activeTab === 'products' && React.createElement(ProductManager, { products: products, seriesTemplates: seriesTemplates, collarTypes: collarTypes, contentTemplates: contentTemplates, genderTemplates: genderTemplates, onFetchData: onFetchData, t: t, tenantId: tenant.id }),
+                activeTab === 'products' && React.createElement(ProductManager, { products: products, seriesTemplates: seriesTemplates, collarTypes: collarTypes, contentTemplates: contentTemplates, genderTemplates: genderTemplates, onFetchData: onFetchData, t: t }),
                 activeTab === 'quickStock' && React.createElement(QuickStockManager, { products: products, onFetchData: onFetchData, t: t }),
-                activeTab === 'shorts' && React.createElement(ShortsManager, { products: products, onFetchData: onFetchData, t: t, tenantId: tenant.id }),
+                activeTab === 'shorts' && React.createElement(ShortsManager, { products: products, onFetchData: onFetchData, t: t }),
                 activeTab === 'templates' && (
                     React.createElement(React.Fragment, null,
-                        React.createElement(SeriesTemplatesManager, { templates: seriesTemplates, onFetchData: onFetchData, t: t, tenantId: tenant.id }),
+                        React.createElement(SeriesTemplatesManager, { templates: seriesTemplates, onFetchData: onFetchData, t: t }),
                         React.createElement("div", { className: "admin-section-divider" }),
-                        React.createElement(CollarTypesManager, { collarTypes: collarTypes, onFetchData: onFetchData, t: t, tenantId: tenant.id }),
+                        React.createElement(CollarTypesManager, { collarTypes: collarTypes, onFetchData: onFetchData, t: t }),
                         React.createElement("div", { className: "admin-section-divider" }),
-                        React.createElement(ContentManager, { contentTemplates: contentTemplates, onFetchData: onFetchData, t: t, tenantId: tenant.id }),
+                        React.createElement(ContentManager, { contentTemplates: contentTemplates, onFetchData: onFetchData, t: t }),
                         React.createElement("div", { className: "admin-section-divider" }),
-                        React.createElement(GenderManager, { genderTemplates: genderTemplates, onFetchData: onFetchData, t: t, tenantId: tenant.id })
+                        React.createElement(GenderManager, { genderTemplates: genderTemplates, onFetchData: onFetchData, t: t })
                     )
                 ),
-                activeTab === 'settings' && React.createElement(StoreSettingsEditor, { settings: storeSettings, onFetchData: onFetchData, t: t, tenant: tenant })
+                activeTab === 'settings' && React.createElement(StoreSettingsEditor, { settings: storeSettings, onFetchData: onFetchData, t: t })
             )
         )
     );
@@ -3849,15 +3822,13 @@ const IosInstallBanner = ({ onDismiss, storeSettings, t }) => {
 
 // --- MAIN APP COMPONENT ---
 const App = () => {
-  const [tenant, setTenant] = useState(null);
   const [products, setProducts] = useState([]);
   const [seriesTemplates, setSeriesTemplates] = useState([]);
   const [collarTypes, setCollarTypes] = useState([]);
   const [contentTemplates, setContentTemplates] = useState([]);
   const [genderTemplates, setGenderTemplates] = useState([]);
-  const [storeSettings, setStoreSettings] = useState(null);
+  const [storeSettings, setStoreSettings] = useState({ name: "Loading...", logo: null, brand: '', manufacturerTitle: '', origin: '', nameColor: '#192A56', adminPassword: 'klm!44' });
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [language, setLanguage] = useState(
     () => (localStorage.getItem('appLanguage')) || 'en'
@@ -3906,97 +3877,6 @@ const App = () => {
   const [adminActiveTab, setAdminActiveTab] = useState('products');
   const shareImageRef = useRef(null);
 
-  const t = useMemo(() => translations[language], [language]);
-
-  const loadTenantAndData = useCallback(async (preventLoader = false) => {
-      if (!preventLoader) {
-        setLoading(true);
-        setError(null);
-      }
-      
-      try {
-          // Determine subdomain
-          const hostname = window.location.hostname;
-          let subdomain = hostname.split('.')[0];
-          if (hostname === 'localhost' || hostname.includes('127.0.0.1')) {
-            subdomain = 'caporicco'; // Default for local dev
-          }
-
-          // Fetch Tenant
-          const { data: tenantData, error: tenantError } = await db
-              .from('tenants')
-              .select('*')
-              .eq('subdomain', subdomain)
-              .single();
-
-          if (tenantError || !tenantData) {
-              throw new Error(t.tenantNotFound);
-          }
-          setTenant(tenantData);
-          document.title = tenantData.name;
-
-          const tenantId = tenantData.id;
-
-          // Fetch all data for this tenant
-          const [
-              productsRes,
-              templatesRes,
-              collarTypesRes,
-              contentTemplatesRes,
-              genderTemplatesRes,
-              settingsRes
-          ] = await Promise.all([
-              db.from('products').select('*, variants(*, series(*))').eq('tenant_id', tenantId).order('created_at', { ascending: false }),
-              db.from('series_templates').select('*').eq('tenant_id', tenantId),
-              db.from('collar_types').select('*').eq('tenant_id', tenantId).order('name'),
-              db.from('content_templates').select('*').eq('tenant_id', tenantId).order('name'),
-              db.from('gender_templates').select('*').eq('tenant_id', tenantId).order('name'),
-              db.from('store_settings').select('*').eq('tenant_id', tenantId).single()
-          ]);
-
-          if (productsRes.error) throw productsRes.error;
-          const formattedProducts = productsRes.data.map((p) => ({
-              ...p, id: String(p.id), video_url: p.video_url, season: p.season, collarType: p.collar_type, content: p.content, gender: p.gender, discountPercentage: p.discount_percentage, created_at: p.created_at,
-              variants: (p.variants || []).map((v) => ({ ...v, id: String(v.id), colorName: v.color_name, colorCode: v.color_code, imageUrl: v.image_url, video_url: v.video_url, series: (v.series || []).map((s) => ({ ...s, id: String(s.id) })) }))
-          }));
-          setProducts(formattedProducts);
-
-          if (templatesRes.error) throw templatesRes.error;
-          setSeriesTemplates(templatesRes.data.map((t) => ({...t, id: String(t.id), name: String(t.name || ''), seriesNames: (t.series_names || []).map(String)})));
-
-          if (collarTypesRes.error) console.warn("Could not fetch collar types:", collarTypesRes.error);
-          else setCollarTypes((collarTypesRes.data || []).map((ct) => ({ ...ct, id: String(ct.id), name: String(ct.name || '') })));
-
-          if (contentTemplatesRes.error) console.warn("Could not fetch content templates:", contentTemplatesRes.error);
-          else setContentTemplates((contentTemplatesRes.data || []).map((ct) => ({ ...ct, id: String(ct.id), name: String(ct.name || '') })));
-          
-          if (genderTemplatesRes.error) console.warn("Could not fetch gender templates:", genderTemplatesRes.error);
-          else setGenderTemplates((genderTemplatesRes.data || []).map((gt) => ({ ...gt, id: String(gt.id), name: String(gt.name || '') })));
-          
-          if (settingsRes.error) throw settingsRes.error;
-          if (settingsRes.data) {
-              setStoreSettings({
-                  brand: settingsRes.data.brand,
-                  manufacturerTitle: settingsRes.data.manufacturer_title,
-                  origin: settingsRes.data.origin,
-                  nameColor: settingsRes.data.name_color,
-                  adminPassword: settingsRes.data.admin_password || 'klm!44'
-              });
-          }
-
-      } catch (err) {
-          console.error("Error loading tenant data:", err);
-          setError(err.message || "An unexpected error occurred.");
-      } finally {
-          if (!preventLoader) setLoading(false);
-      }
-  }, [t.tenantNotFound]);
-
-
-  useEffect(() => {
-    loadTenantAndData();
-  }, [loadTenantAndData]);
-
   const isNewProduct = (createdAt) => {
     if (!createdAt) return false;
     const productDate = new Date(createdAt);
@@ -4005,14 +3885,135 @@ const App = () => {
     return (now.getTime() - productDate.getTime()) < oneWeek;
   };
   
+  const fetchData = async (preventLoader = false) => {
+      if (!preventLoader) setLoading(true);
+      try {
+          // Fetch Products with variants and series
+          const { data: productsData, error: productsError } = await db
+              .from('products')
+              .select('*, variants(*, series(*))')
+              .order('created_at', { ascending: false });
+
+          if (productsError) throw productsError;
+          
+          const formattedProducts = productsData.map((p) => ({
+              ...p,
+              id: String(p.id),
+              video_url: p.video_url,
+              season: p.season,
+              collarType: p.collar_type,
+              content: p.content,
+              gender: p.gender,
+              discountPercentage: p.discount_percentage,
+              created_at: p.created_at,
+              variants: (p.variants || []).map((v) => ({
+                  ...v,
+                  id: String(v.id),
+                  colorName: v.color_name,
+                  colorCode: v.color_code,
+                  imageUrl: v.image_url,
+                  video_url: v.video_url,
+                  series: (v.series || []).map((s) => ({ ...s, id: String(s.id) }))
+              }))
+          }));
+          setProducts(formattedProducts);
+
+          // Fetch Series Templates
+          const { data: templatesData, error: templatesError } = await db.from('series_templates').select('*');
+          if (templatesError) throw templatesError;
+          const formattedTemplates = templatesData.map((t) => ({...t, id: String(t.id), name: String(t.name || ''), seriesNames: (t.series_names || []).map(String)}));
+          setSeriesTemplates(formattedTemplates);
+          
+          // Fetch Collar Types
+          const { data: collarTypesData, error: collarTypesError } = await db.from('collar_types').select('*').order('name');
+          if (collarTypesError) {
+              console.warn("Could not fetch collar types. Ensure 'collar_types' table exists.", collarTypesError);
+          } else {
+              setCollarTypes((collarTypesData || []).map((ct) => ({ ...ct, id: String(ct.id), name: String(ct.name || '') })));
+          }
+
+          // Fetch Content Templates
+          const { data: contentTemplatesData, error: contentTemplatesError } = await db.from('content_templates').select('*').order('name');
+          if (contentTemplatesError) {
+              console.warn("Could not fetch content templates. Ensure 'content_templates' table exists.", contentTemplatesError);
+          } else {
+              setContentTemplates((contentTemplatesData || []).map((ct) => ({ ...ct, id: String(ct.id), name: String(ct.name || '') })));
+          }
+
+          // Fetch Gender Templates
+          const { data: genderTemplatesData, error: genderTemplatesError } = await db.from('gender_templates').select('*').order('name');
+          if (genderTemplatesError) {
+              console.warn("Could not fetch gender templates. Ensure 'gender_templates' table exists.", genderTemplatesError);
+          } else {
+              setGenderTemplates((genderTemplatesData || []).map((gt) => ({ ...gt, id: String(gt.id), name: String(gt.name || '') })));
+          }
+          
+           // Fetch Store Settings
+          const { data: settingsData, error: settingsError } = await db.from('store_settings').select('*').eq('id', 1).single();
+          if (settingsError) throw settingsError;
+          if (settingsData) {
+              setStoreSettings({
+                  name: settingsData.name,
+                  logo: settingsData.logo,
+                  brand: settingsData.brand,
+                  manufacturerTitle: settingsData.manufacturer_title,
+                  origin: settingsData.origin,
+                  nameColor: settingsData.name_color,
+                  adminPassword: settingsData.admin_password || 'klm!44'
+              });
+          }
+
+      } catch (error) {
+          console.error("Error fetching data:", error);
+      } finally {
+          if (!preventLoader) setLoading(false);
+      }
+  };
+
+  useEffect(() => {
+    const setupInitialData = async () => {
+        const collarTypesToAdd = [
+            { name: 'Polo' },
+            { name: 'Crew Neck' },
+            { name: 'Button Collar' },
+            { name: 'V-Neck' },
+            { name: 'Shirt Collar' },
+            { name: 'Mock Neck' },
+            { name: 'Cardigan' },
+        ];
+        
+        try {
+            const { data, count } = await db.from('collar_types').select('*', { count: 'exact', head: true });
+            if (count === 0) {
+                const { error: insertError } = await db.from('collar_types').insert(collarTypesToAdd);
+                if (insertError) throw insertError;
+            }
+        } catch (e) { console.error("Exception during initial collar type setup:", e); }
+        
+        const genderTemplatesToAdd = [
+            { name: 'Male' }, { name: 'Female' }, { name: 'Unisex' },
+            { name: 'Child' }, { name: 'Boy' }, { name: 'Girl' },
+        ];
+        try {
+            const { data, count } = await db.from('gender_templates').select('*', { count: 'exact', head: true });
+            if (count === 0) {
+                const { error: insertError } = await db.from('gender_templates').insert(genderTemplatesToAdd);
+                if (insertError) throw insertError;
+            }
+        } catch (e) { console.error("Exception during initial gender template setup:", e); }
+        
+        await fetchData();
+    };
+    setupInitialData();
+  }, []);
+  
   useEffect(() => {
       try {
-          const key = `cartItems_${tenant?.id}`;
-          localStorage.setItem(key, JSON.stringify(cartItems));
+          localStorage.setItem('cartItems', JSON.stringify(cartItems));
       } catch (error) {
           console.error("Could not save cart to localStorage", error);
       }
-  }, [cartItems, tenant]);
+  }, [cartItems]);
   
   useEffect(() => {
     localStorage.setItem('appLanguage', language);
@@ -4104,6 +4105,8 @@ const App = () => {
     localStorage.setItem('iosA2hsDismissed', Date.now().toString());
     setShowIosInstallHelp(false);
   };
+
+  const t = useMemo(() => translations[language], [language]);
   
   const seriesNameToTemplateMap = useMemo(() => {
       const map = new Map();
@@ -4297,7 +4300,7 @@ const App = () => {
               cartItems: cartItems,
               totals: totals,
               t: t,
-              storeSettings: { ...storeSettings, ...tenant }, // Combine settings
+              storeSettings: storeSettings,
               cartStats: cartStats,
             });
 
@@ -4317,7 +4320,7 @@ const App = () => {
                    const file = new File([blob], 'order.jpg', { type: 'image/jpeg' });
                    try {
                      await navigator.share({
-                        title: `${tenant.name} Order`,
+                        title: `${storeSettings.name} Order`,
                         files: [file],
                      });
                    } catch (error) {
@@ -4389,7 +4392,7 @@ const App = () => {
             const ws = XLSX.utils.json_to_sheet(data);
             XLSX.utils.book_append_sheet(wb, ws, "Order");
 
-            XLSX.writeFile(wb, `${tenant.name}_Order_${new Date().toLocaleDateString()}.xlsx`);
+            XLSX.writeFile(wb, `${storeSettings.name}_Order_${new Date().toLocaleDateString()}.xlsx`);
 
         } catch (error) {
             console.error("Failed to generate Excel file:", error);
@@ -4409,11 +4412,7 @@ const App = () => {
     };
 
   if (loading) {
-    return React.createElement("div", { className: "loader" }, t.loadingStore);
-  }
-
-  if (error) {
-    return React.createElement("div", { className: "loader" }, error);
+    return React.createElement("div", { className: "loader" }, "Loading...");
   }
 
   return (
@@ -4422,9 +4421,9 @@ const App = () => {
         React.createElement("div", { className: "container" },
           React.createElement("div", { className: "header-content" },
             React.createElement("div", { className: "store-info" },
-                tenant.logo && React.createElement("img", { src: tenant.logo, alt: "Store Logo", className: "store-logo-img", onClick: handleAdminToggle }),
-                React.createElement("h1", { className: "store-logo", onClick: handleLayoutToggle }, tenant.name),
-                React.createElement("h1", { className: "store-name-mobile-gallery", onClick: () => window.location.reload(), style: { color: storeSettings.nameColor || '#192A56' } }, tenant.name)
+                storeSettings.logo && React.createElement("img", { src: storeSettings.logo, alt: "Store Logo", className: "store-logo-img", onClick: handleAdminToggle }),
+                React.createElement("h1", { className: "store-logo", onClick: handleLayoutToggle }, storeSettings.name),
+                React.createElement("h1", { className: "store-name-mobile-gallery", onClick: () => window.location.reload(), style: { color: storeSettings.nameColor || '#192A56' } }, storeSettings.name)
             ),
             !isAdminView && (
                 React.createElement("div", { className: `search-bar desktop-search-bar ${isMobileSearchVisible ? 'mobile-search-bar-active' : ''}` },
@@ -4479,12 +4478,11 @@ const App = () => {
                 collarTypes,
                 contentTemplates,
                 genderTemplates,
-                onFetchData: loadTenantAndData,
+                onFetchData: fetchData,
                 t,
                 activeTab: adminActiveTab,
                 onActiveTabChange: setAdminActiveTab,
-                onExit: () => setIsAdminView(false),
-                tenant: tenant
+                onExit: () => setIsAdminView(false)
              })
           ) : (
             layout === 'gallery' ? (
@@ -4495,7 +4493,7 @@ const App = () => {
                     t: t,
                     activeFilters: activeFilters,
                     seriesNameToTemplateMap: seriesNameToTemplateMap,
-                    storeSettings: { ...storeSettings, ...tenant },
+                    storeSettings: storeSettings,
                     onSelectOptions: (product, variant) => handleOpenModal(product, variant)
                 })
             ) : (
@@ -4560,12 +4558,12 @@ const App = () => {
       isA2hsBannerVisible && installPrompt && React.createElement(AddToHomeScreenBanner, {
           onInstall: handleInstallClick,
           onDismiss: handleDismissBanner,
-          storeSettings: { ...storeSettings, ...tenant },
+          storeSettings: storeSettings,
           t: t
       }),
       showIosInstallHelp && React.createElement(IosInstallBanner, {
           onDismiss: handleIosDismiss,
-          storeSettings: { ...storeSettings, ...tenant },
+          storeSettings: storeSettings,
           t: t
       })
     )
