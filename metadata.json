@@ -1,5 +1,9 @@
 {
-  "name": "home screen sepet detay ekle doğru hesaplama beden filtre ikonu kalktı turuncu butonlar ",
-  "description": "An empty app\n",
-  "requestFramePermissions": []
+  "short_name": "CAPORİCCO",
+  "name": "CAPORİCCO Digital Catalog",
+  "description": "CAPORİCCO - B2B Digital Catalog",
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#007bff",
+  "background_color": "#f8f9fa"
 }
