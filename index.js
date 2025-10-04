@@ -2366,7 +2366,7 @@ const TemplateForm = ({ template: initialTemplate, onSave, onCancel, t }) => {
     );
 };
 
-const StoreSettingsEditor = ({ settings, onFetchData, t, onSettingsSave, onPasswordSave }) => {
+const StoreSettingsEditor = ({ settings, onFetchData, t }) => {
     const [currentSettings, setCurrentSettings] = useState(settings);
     const [passwordFields, setPasswordFields] = useState({ current: '', newPass: '', confirmPass: '' });
 
@@ -2406,7 +2406,7 @@ const StoreSettingsEditor = ({ settings, onFetchData, t, onSettingsSave, onPassw
         } else {
             alert(t.passwordChangedSuccess);
             setPasswordFields({ current: '', newPass: '', confirmPass: '' });
-            onPasswordSave(newPass);
+            onFetchData();
         }
     };
 
@@ -2440,7 +2440,7 @@ const StoreSettingsEditor = ({ settings, onFetchData, t, onSettingsSave, onPassw
             console.error(error);
         } else {
             alert("Settings saved!");
-            onSettingsSave(currentSettings);
+            onFetchData();
         }
     };
 
@@ -2502,7 +2502,7 @@ const StoreSettingsEditor = ({ settings, onFetchData, t, onSettingsSave, onPassw
 };
 
 
-const AdminPanel = ({ products, seriesTemplates, storeSettings, collarTypes, contentTemplates, genderTemplates, onFetchData, t, activeTab, onActiveTabChange, onExit, onSettingsSave, onPasswordSave }) => {
+const AdminPanel = ({ products, seriesTemplates, storeSettings, collarTypes, contentTemplates, genderTemplates, onFetchData, t, activeTab, onActiveTabChange, onExit }) => {
     return (
         React.createElement("div", { className: "admin-panel" },
              React.createElement("div", { className: "admin-header" },
@@ -2531,7 +2531,7 @@ const AdminPanel = ({ products, seriesTemplates, storeSettings, collarTypes, con
                         React.createElement(GenderManager, { genderTemplates: genderTemplates, onFetchData: onFetchData, t: t })
                     )
                 ),
-                activeTab === 'settings' && React.createElement(StoreSettingsEditor, { settings: storeSettings, onFetchData: onFetchData, t: t, onSettingsSave: onSettingsSave, onPasswordSave: onPasswordSave })
+                activeTab === 'settings' && React.createElement(StoreSettingsEditor, { settings: storeSettings, onFetchData: onFetchData, t: t })
             )
         )
     );
@@ -3877,14 +3877,6 @@ const App = () => {
   const [adminActiveTab, setAdminActiveTab] = useState('products');
   const shareImageRef = useRef(null);
 
-  const handleSettingsUpdate = (updatedSettings) => {
-    setStoreSettings(updatedSettings);
-  };
-    
-  const handlePasswordUpdate = (newPassword) => {
-      setStoreSettings(prev => ({...prev, adminPassword: newPassword}));
-  };
-
   const isNewProduct = (createdAt) => {
     if (!createdAt) return false;
     const productDate = new Date(createdAt);
@@ -3977,6 +3969,7 @@ const App = () => {
            // Fetch Store Settings
           const { data: settingsData, error: settingsError } = await db.from('store_settings').select('*').eq('id', 1).maybeSingle();
           if (settingsError) throw settingsError;
+          
           if (settingsData) {
               setStoreSettings({
                   name: settingsData.name,
@@ -3987,6 +3980,10 @@ const App = () => {
                   nameColor: settingsData.name_color,
                   adminPassword: settingsData.admin_password || 'klm!44'
               });
+          } else {
+              // If no settings are found, use defaults to prevent app crash and "Loading..." text.
+              console.warn("No store settings found for ID=1. Using default name.");
+              setStoreSettings(prev => ({ ...prev, name: 'CAPORİCCO' }));
           }
 
       } catch (error) {
@@ -4508,9 +4505,7 @@ const App = () => {
                 t,
                 activeTab: adminActiveTab,
                 onActiveTabChange: setAdminActiveTab,
-                onExit: () => setIsAdminView(false),
-                onSettingsSave: handleSettingsUpdate,
-                onPasswordSave: handlePasswordUpdate
+                onExit: () => setIsAdminView(false)
              })
           ) : (
             layout === 'gallery' ? (
