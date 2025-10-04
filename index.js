@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo, useRef, forwardRef, useEffect, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
 
@@ -147,7 +148,8 @@ const translations = {
     addNewGenderTemplate: "Add New Gender Template",
     editGenderTemplate: "Edit Gender Template",
     genderTemplateName: "Gender Name",
-    downloadExcel: "Download as Excel",
+    downloadExcelGrid: "Download as Excel (Grid)",
+    downloadExcelList: "Download as Excel (List)",
     downloading: "Preparing Excel...",
     shortsManagement: "Shorts Management",
     addVideo: "Add Video",
@@ -180,6 +182,21 @@ const translations = {
     fillAllPasswordFields: "Please fill all password fields.",
     newPasswordsDoNotMatch: "New passwords do not match.",
     currentPasswordIncorrect: "Current password is incorrect.",
+    excelCuvalNo: "Bag No",
+    excelMarka: "Brand",
+    excelUreticiUnvani: "Manufacturer",
+    excelModelArt: "Model/Art.",
+    excelMalCinsi: "Item Type",
+    excelCinsiyet: "Gender",
+    excelYas: "Age",
+    excelMensei: "Origin",
+    excelIcerik: "Content %",
+    excelDokuma: "Weave",
+    excelRenk: "Color",
+    excelBedenPrefix: "SIZE-",
+    excelToplam: "Total",
+    excelBeden: "SIZE",
+    excelAdet: "QTY",
   },
   tr: {
     searchPlaceholder: "Ürün adı veya koduyla ara...",
@@ -306,7 +323,8 @@ const translations = {
     addNewGenderTemplate: "Yeni Cinsiyet Şablonu Ekle",
     editGenderTemplate: "Cinsiyet Şablonunu Düzenle",
     genderTemplateName: "Cinsiyet Adı",
-    downloadExcel: "Excel İndir",
+    downloadExcelGrid: "Excel İndir (Izgara)",
+    downloadExcelList: "Excel İndir (Liste)",
     downloading: "Hazırlanıyor...",
     shortsManagement: "Shorts Yönetimi",
     addVideo: "Video Ekle",
@@ -339,6 +357,21 @@ const translations = {
     fillAllPasswordFields: "Lütfen tüm şifre alanlarını doldurun.",
     newPasswordsDoNotMatch: "Yeni şifreler eşleşmiyor.",
     currentPasswordIncorrect: "Mevcut şifre yanlış.",
+    excelCuvalNo: "CUVAL NO",
+    excelMarka: "MARKA",
+    excelUreticiUnvani: "ÜRETİCİ ÜNVANI",
+    excelModelArt: "MODEL/ARTİKEL",
+    excelMalCinsi: "MAL CİNSİ",
+    excelCinsiyet: "CİNSİYET",
+    excelYas: "YAŞ",
+    excelMensei: "MENŞEİ",
+    excelIcerik: "İÇERİK %",
+    excelDokuma: "DOKUMA/ÖRME",
+    excelRenk: "RENK",
+    excelBedenPrefix: "BEDEN-",
+    excelToplam: "TOPLAM",
+    excelBeden: "BEDEN",
+    excelAdet: "ADET",
   },
   ru: {
     searchPlaceholder: "Поиск по названию или коду товара...",
@@ -465,7 +498,8 @@ const translations = {
     addNewGenderTemplate: "Добавить новый шаблон пола",
     editGenderTemplate: "Редактировать шаблон пола",
     genderTemplateName: "Название пола",
-    downloadExcel: "Скачать как Excel",
+    downloadExcelGrid: "Скачать Excel (Сетка)",
+    downloadExcelList: "Скачать Excel (Список)",
     downloading: "Подготовка...",
     shortsManagement: "Управление Shorts",
     addVideo: "Добавить видео",
@@ -498,6 +532,21 @@ const translations = {
     fillAllPasswordFields: "Пожалуйста, заполните все поля пароля.",
     newPasswordsDoNotMatch: "Новые пароли не совпадают.",
     currentPasswordIncorrect: "Текущий пароль неверен.",
+    excelCuvalNo: "НОМЕР МЕШКА",
+    excelMarka: "ТОРГОВАЯ МАРКА",
+    excelUreticiUnvani: "ПРОИЗВОДИТЕЛЬ",
+    excelModelArt: "АРТИКУЛ/ПРОИЗВ.",
+    excelMalCinsi: "ВИД ОДЕЖДЫ",
+    excelCinsiyet: "ПОЛ",
+    excelYas: "ВОЗРАСТ",
+    excelMensei: "СТРАНА",
+    excelIcerik: "СОСТАВ %",
+    excelDokuma: "ШВЕЙКА/ТРИКОТАЖ",
+    excelRenk: "ЦВЕТ",
+    excelBedenPrefix: "РАЗМЕР-",
+    excelToplam: "ИТОГО",
+    excelBeden: "РАЗМЕР",
+    excelAdet: "КОЛИЧЕСТВО",
   },
 };
 
@@ -858,7 +907,7 @@ const ProductCard = ({ product, onSelectOptions, t }) => {
 };
 
 // --- CART COMPONENT ---
-const CartSidebar = ({ isOpen, onClose, cartItems, onRemoveItem, onUpdateQuantity, onShareOrder, isSharing, cartStats, t, onDownloadExcel, isDownloadingExcel }) => {
+const CartSidebar = ({ isOpen, onClose, cartItems, onRemoveItem, onUpdateQuantity, onShareOrder, isSharing, cartStats, t, onDownloadExcel, onDownloadExcelList, isDownloadingGrid, isDownloadingList }) => {
     const totals = useMemo(() => {
         return cartItems.reduce((acc, item) => {
             const { currency, price } = item.series;
@@ -975,18 +1024,30 @@ const CartSidebar = ({ isOpen, onClose, cartItems, onRemoveItem, onUpdateQuantit
                      )
                    ))
                 ),
-                React.createElement("button", { className: "share-order-btn", onClick: onShareOrder, disabled: isSharing || isDownloadingExcel },
+                React.createElement("button", { className: "share-order-btn", onClick: onShareOrder, disabled: isSharing || isDownloadingGrid || isDownloadingList },
                     isSharing ? t.sharingOrder : t.shareOrder
                 ),
-                 React.createElement("button", { 
+                React.createElement("button", { 
                     className: "download-excel-btn", 
                     onClick: onDownloadExcel, 
-                    disabled: isDownloadingExcel || isSharing 
+                    disabled: isDownloadingGrid || isDownloadingList || isSharing 
                 },
-                    isDownloadingExcel ? t.downloading : (
+                    isDownloadingGrid ? t.downloading : (
                         React.createElement(React.Fragment, null, 
                             React.createElement(DownloadIcon, null),
-                            t.downloadExcel
+                            t.downloadExcelGrid
+                        )
+                    )
+                ),
+                React.createElement("button", { 
+                    className: "download-excel-btn", 
+                    onClick: onDownloadExcelList, 
+                    disabled: isDownloadingGrid || isDownloadingList || isSharing 
+                },
+                    isDownloadingList ? t.downloading : (
+                        React.createElement(React.Fragment, null, 
+                            React.createElement(DownloadIcon, null),
+                            t.downloadExcelList
                         )
                     )
                 )
@@ -3858,7 +3919,7 @@ const App = () => {
   const [modalData, setModalData] = useState(null);
   const [isAdminView, setIsAdminView] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
-  const [isDownloadingExcel, setIsDownloadingExcel] = useState(false);
+  const [isDownloadingExcel, setIsDownloadingExcel] = useState(null);
   const [layout, setLayout] = useState('double');
   const [installPrompt, setInstallPrompt] = useState(null);
   const [isA2hsBannerVisible, setIsA2hsBannerVisible] = useState(false);
@@ -4364,59 +4425,201 @@ const App = () => {
     };
     
     const handleDownloadExcel = async () => {
-        setIsDownloadingExcel(true);
+        setIsDownloadingExcel('grid');
         try {
-            const wb = XLSX.utils.book_new();
-            
-            const groupedByProduct = cartItems.reduce((acc, item) => {
-                const key = `${item.productCode} - ${item.variant.colorName}`;
+            // 1. Group items by product code and color, and calculate size distributions
+            const groupedItems = cartItems.reduce((acc, item) => {
+                const key = `${item.productCode}-${item.variant.colorName}`;
                 if (!acc[key]) {
+                    const product = products.find(p => p.code === item.productCode);
                     acc[key] = {
-                        productCode: item.productCode,
                         productName: item.productName,
-                        color: item.variant.colorName,
-                        imageUrl: item.variant.imageUrl,
-                        series: []
+                        productCode: item.productCode,
+                        colorName: item.variant.colorName,
+                        gender: product?.gender,
+                        content: product?.content,
+                        sizeTotals: new Map()
                     };
                 }
-                const units = getUnitsPerSeries(item.series.name);
-                const unitPrice = units > 0 ? item.series.price / units : item.series.price;
-                
-                acc[key].series.push({
-                    seriesName: item.series.name,
-                    quantity: Number(item.quantity),
-                    totalUnits: Number(item.quantity) * units,
-                    unitPrice: unitPrice,
-                    totalPrice: Number(item.quantity) * item.series.price,
-                    currency: item.series.currency
+
+                const parsedSeries = parseSeriesString(item.series.name);
+                parsedSeries.forEach(({ size, quantity: quantityInSeries }) => {
+                    const totalSizeQuantity = Number(item.quantity) * quantityInSeries;
+                    const currentTotal = acc[key].sizeTotals.get(size) || 0;
+                    acc[key].sizeTotals.set(size, currentTotal + totalSizeQuantity);
                 });
+
                 return acc;
             }, {});
 
-            const data = Object.values(groupedByProduct).flatMap(group =>
-                group.series.map(s => ({
-                    [t.productCode]: group.productCode,
-                    [t.productName]: group.productName,
-                    [t.colorName]: group.color,
-                    [t.seriesName]: s.seriesName,
-                    [t.totalPacks]: s.quantity,
-                    [t.totalUnits]: s.totalUnits,
-                    [t.unitPrice]: s.unitPrice,
-                    [t.total]: s.totalPrice,
-                    [t.currency]: s.currency,
-                }))
-            );
+            // 2. Get all unique sizes and sort them logically
+            const allSizes = new Set();
+            Object.values(groupedItems).forEach(group => {
+                group.sizeTotals.forEach((_, size) => allSizes.add(size));
+            });
             
-            const ws = XLSX.utils.json_to_sheet(data);
-            XLSX.utils.book_append_sheet(wb, ws, "Order");
+            const sortedSizes = Array.from(allSizes).sort((a, b) => {
+                const sizeOrder = ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL", "6XL", "7XL", "8XL"];
+                const orderA = sizeOrder.indexOf(a.toUpperCase());
+                const orderB = sizeOrder.indexOf(b.toUpperCase());
 
-            XLSX.writeFile(wb, `${storeSettings.name}_Order_${new Date().toLocaleDateString()}.xlsx`);
+                if (orderA !== -1 && orderB !== -1) return orderA - orderB;
+                if (orderA !== -1) return -1;
+                if (orderB !== -1) return 1;
+
+                return a.localeCompare(b, undefined, { numeric: true });
+            });
+            
+            // 3. Define headers in the desired order
+            const headers = [
+                t.excelCuvalNo,
+                t.excelMarka,
+                t.excelUreticiUnvani,
+                t.excelModelArt,
+                t.excelMalCinsi,
+                t.excelCinsiyet,
+                t.excelYas,
+                t.excelMensei,
+                t.excelIcerik,
+                t.excelDokuma,
+                t.excelRenk,
+                ...sortedSizes.map(size => `${t.excelBedenPrefix}${size}`),
+                t.excelToplam,
+            ];
+            
+            let grandTotal = 0;
+
+            // 4. Prepare data for the worksheet, ensuring keys match headers
+            const dataForSheet = Object.values(groupedItems).map(group => {
+                const row = {};
+                row[t.excelCuvalNo] = '';
+                row[t.excelMarka] = storeSettings.brand || '';
+                row[t.excelUreticiUnvani] = storeSettings.manufacturerTitle || '';
+                row[t.excelModelArt] = group.productCode;
+                row[t.excelMalCinsi] = group.productName;
+                row[t.excelCinsiyet] = t[group.gender?.toLowerCase()] || group.gender || '';
+                row[t.excelYas] = '';
+                row[t.excelMensei] = storeSettings.origin || '';
+                row[t.excelIcerik] = group.content || '';
+                row[t.excelDokuma] = ''; // As per user request, leave empty if no data
+                row[t.excelRenk] = group.colorName;
+
+                let rowTotal = 0;
+                sortedSizes.forEach(size => {
+                    const qty = group.sizeTotals.get(size) || '';
+                    row[`${t.excelBedenPrefix}${size}`] = qty;
+                    if (qty) {
+                        rowTotal += qty;
+                    }
+                });
+
+                row[t.excelToplam] = rowTotal > 0 ? rowTotal : '';
+                grandTotal += rowTotal;
+
+                return row;
+            });
+
+            const wb = XLSX.utils.book_new();
+            let ws;
+
+            if (dataForSheet.length > 0) {
+                // Add an empty row and the total row
+                dataForSheet.push({}); // Empty row for spacing
+                const totalRow = {};
+                totalRow[t.excelRenk] = t.excelToplam.toUpperCase(); // Label in 'RENK' column
+                totalRow[t.excelToplam] = grandTotal > 0 ? grandTotal : '';
+                dataForSheet.push(totalRow);
+
+                ws = XLSX.utils.json_to_sheet(dataForSheet, { header: headers });
+            } else {
+                ws = XLSX.utils.json_to_sheet([], { header: headers });
+            }
+            
+            XLSX.utils.book_append_sheet(wb, ws, "Order");
+            XLSX.writeFile(wb, `${storeSettings.name}_Order_Grid_${new Date().toLocaleDateString().replace(/\//g, '-')}.xlsx`);
 
         } catch (error) {
             console.error("Failed to generate Excel file:", error);
             alert("Could not generate Excel file.");
         } finally {
-            setIsDownloadingExcel(false);
+            setIsDownloadingExcel(null);
+        }
+    };
+
+    const handleDownloadExcelList = async () => {
+        setIsDownloadingExcel('list');
+        try {
+            const headers = [
+                t.excelCuvalNo,
+                t.excelMarka,
+                t.excelUreticiUnvani,
+                t.excelModelArt,
+                t.excelMalCinsi,
+                t.excelCinsiyet,
+                t.excelYas,
+                t.excelMensei,
+                t.excelIcerik,
+                t.excelDokuma,
+                t.excelRenk,
+                t.excelBeden,
+                t.excelAdet,
+            ];
+
+            const dataForSheet = [];
+            let grandTotal = 0;
+
+            for (const item of cartItems) {
+                const product = products.find(p => p.code === item.productCode);
+                if (!product) continue;
+
+                const parsedSeries = parseSeriesString(item.series.name);
+                
+                for (const { size, quantity: quantityInSeries } of parsedSeries) {
+                    const totalSizeQuantity = Number(item.quantity) * quantityInSeries;
+                    
+                    const row = {
+                        [t.excelCuvalNo]: '',
+                        [t.excelMarka]: storeSettings.brand || '',
+                        [t.excelUreticiUnvani]: storeSettings.manufacturerTitle || '',
+                        [t.excelModelArt]: item.productCode,
+                        [t.excelMalCinsi]: item.productName,
+                        [t.excelCinsiyet]: t[product.gender?.toLowerCase()] || product.gender || '',
+                        [t.excelYas]: '',
+                        [t.excelMensei]: storeSettings.origin || '',
+                        [t.excelIcerik]: product.content || '',
+                        [t.excelDokuma]: '',
+                        [t.excelRenk]: item.variant.colorName,
+                        [t.excelBeden]: size,
+                        [t.excelAdet]: totalSizeQuantity
+                    };
+                    dataForSheet.push(row);
+                    grandTotal += totalSizeQuantity;
+                }
+            }
+
+            const wb = XLSX.utils.book_new();
+            let ws;
+
+            if (dataForSheet.length > 0) {
+                dataForSheet.push({}); // Spacer row
+                const totalRow = {
+                    [t.excelBeden]: t.excelToplam.toUpperCase(),
+                    [t.excelAdet]: grandTotal > 0 ? grandTotal : '',
+                };
+                dataForSheet.push(totalRow);
+                ws = XLSX.utils.json_to_sheet(dataForSheet, { header: headers });
+            } else {
+                ws = XLSX.utils.json_to_sheet([], { header: headers });
+            }
+            
+            XLSX.utils.book_append_sheet(wb, ws, "Order List");
+            XLSX.writeFile(wb, `${storeSettings.name}_Order_List_${new Date().toLocaleDateString().replace(/\//g, '-')}.xlsx`);
+
+        } catch (error) {
+            console.error("Failed to generate list Excel file:", error);
+            alert("Could not generate list Excel file.");
+        } finally {
+            setIsDownloadingExcel(null);
         }
     };
 
@@ -4548,7 +4751,9 @@ const App = () => {
         cartStats: cartStats,
         t: t,
         onDownloadExcel: handleDownloadExcel,
-        isDownloadingExcel: isDownloadingExcel,
+        onDownloadExcelList: handleDownloadExcelList,
+        isDownloadingGrid: isDownloadingExcel === 'grid',
+        isDownloadingList: isDownloadingExcel === 'list',
       }),
       React.createElement(AdminPasswordModal, {
           isOpen: isPasswordModalOpen,
