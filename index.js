@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo, useRef, forwardRef, useEffect, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
 
@@ -19,8 +20,6 @@ const colorNameMap = {
   // Russian
   'черный': '#000000', 'белый': '#ffffff', 'красный': '#ff0000', 'зеленый': '#008000', 'синий': '#0000ff', 'желтый': '#ffff00', 'серый': '#808080', 'серебряный': '#c0c0c0', 'бордовый': '#800020', 'темно-синий': '#000080', 'оранжевый': '#ffa500', 'розовый': '#ffc0cb', 'коричневый': '#a52a2a', 'бежевый': '#f5f5dc', 'горчичный': '#ffdb58',
 };
-
-const DEFAULT_LOGO_SVG = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%23007bff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path></svg>`;
 
 // --- TRANSLATIONS ---
 const translations = {
@@ -2416,14 +2415,28 @@ const StoreSettingsEditor = ({ settings, onFetchData, t }) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            if (typeof reader.result === 'string') {
-                const logoDataUrl = reader.result;
-                setCurrentSettings((s) => ({ ...s, logo: logoDataUrl }));
-            }
-        };
-        reader.readAsDataURL(file);
+        const filePath = `public/logo-${Date.now()}`;
+        
+        const { data: uploadData, error: uploadError } = await db.storage
+            .from('product-images') // Using the same bucket for simplicity
+            .upload(filePath, file, {
+                cacheControl: '3600',
+                upsert: true,
+            });
+
+        if (uploadError) {
+            alert(`Logo upload failed: ${uploadError.message}`);
+            console.error('Logo upload error:', uploadError);
+            return;
+        }
+
+        const { data } = db.storage
+            .from('product-images')
+            .getPublicUrl(filePath);
+
+        if (data.publicUrl) {
+            setCurrentSettings((s) => ({ ...s, logo: data.publicUrl }));
+        }
     };
     
     const handleSave = async () => {
@@ -4435,17 +4448,15 @@ const App = () => {
     return React.createElement("div", { className: "loader" }, "Loading...");
   }
 
-  const logoSrc = storeSettings.logo || DEFAULT_LOGO_SVG;
-
   return (
     React.createElement(React.Fragment, null,
       React.createElement("header", { className: "app-header" },
         React.createElement("div", { className: "container" },
           React.createElement("div", { className: "header-content" },
             React.createElement("div", { className: "store-info" },
-                React.createElement("img", { src: logoSrc, alt: "Store Logo", className: "store-logo-img", onClick: handleAdminToggle }),
-                React.createElement("h1", { className: "store-logo", onClick: handleLayoutToggle }, storeSettings.name),
-                React.createElement("h1", { className: "store-name-mobile-gallery", onClick: () => window.location.reload(), style: { color: storeSettings.nameColor || '#192A56' } }, storeSettings.name)
+                storeSettings.logo && React.createElement("img", { src: storeSettings.logo, alt: "Store Logo", className: "store-logo-img", onClick: handleAdminToggle }),
+                React.createElement("h1", { className: "store-logo", onClick: handleAdminToggle }, storeSettings.name),
+                React.createElement("h1", { className: "store-name-mobile-gallery", onClick: handleAdminToggle, style: { color: storeSettings.nameColor || '#192A56' } }, storeSettings.name)
             ),
             !isAdminView && (
                 React.createElement("div", { className: `search-bar desktop-search-bar ${isMobileSearchVisible ? 'mobile-search-bar-active' : ''}` },
