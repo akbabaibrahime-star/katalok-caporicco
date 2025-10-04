@@ -1,5 +1,4 @@
 
-
 import React, { useState, useMemo, useRef, forwardRef, useEffect, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
 
@@ -2367,7 +2366,7 @@ const TemplateForm = ({ template: initialTemplate, onSave, onCancel, t }) => {
     );
 };
 
-const StoreSettingsEditor = ({ settings, onFetchData, t }) => {
+const StoreSettingsEditor = ({ settings, onFetchData, t, onSettingsSave, onPasswordSave }) => {
     const [currentSettings, setCurrentSettings] = useState(settings);
     const [passwordFields, setPasswordFields] = useState({ current: '', newPass: '', confirmPass: '' });
 
@@ -2407,7 +2406,7 @@ const StoreSettingsEditor = ({ settings, onFetchData, t }) => {
         } else {
             alert(t.passwordChangedSuccess);
             setPasswordFields({ current: '', newPass: '', confirmPass: '' });
-            onFetchData();
+            onPasswordSave(newPass);
         }
     };
 
@@ -2415,28 +2414,14 @@ const StoreSettingsEditor = ({ settings, onFetchData, t }) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        const filePath = `public/logo-${Date.now()}`;
-        
-        const { data: uploadData, error: uploadError } = await db.storage
-            .from('product-images') // Using the same bucket for simplicity
-            .upload(filePath, file, {
-                cacheControl: '3600',
-                upsert: true,
-            });
-
-        if (uploadError) {
-            alert(`Logo upload failed: ${uploadError.message}`);
-            console.error('Logo upload error:', uploadError);
-            return;
-        }
-
-        const { data } = db.storage
-            .from('product-images')
-            .getPublicUrl(filePath);
-
-        if (data.publicUrl) {
-            setCurrentSettings((s) => ({ ...s, logo: data.publicUrl }));
-        }
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            if (typeof reader.result === 'string') {
+                const logoDataUrl = reader.result;
+                setCurrentSettings((s) => ({ ...s, logo: logoDataUrl }));
+            }
+        };
+        reader.readAsDataURL(file);
     };
     
     const handleSave = async () => {
@@ -2455,7 +2440,7 @@ const StoreSettingsEditor = ({ settings, onFetchData, t }) => {
             console.error(error);
         } else {
             alert("Settings saved!");
-            onFetchData();
+            onSettingsSave(currentSettings);
         }
     };
 
@@ -2517,7 +2502,7 @@ const StoreSettingsEditor = ({ settings, onFetchData, t }) => {
 };
 
 
-const AdminPanel = ({ products, seriesTemplates, storeSettings, collarTypes, contentTemplates, genderTemplates, onFetchData, t, activeTab, onActiveTabChange, onExit }) => {
+const AdminPanel = ({ products, seriesTemplates, storeSettings, collarTypes, contentTemplates, genderTemplates, onFetchData, t, activeTab, onActiveTabChange, onExit, onSettingsSave, onPasswordSave }) => {
     return (
         React.createElement("div", { className: "admin-panel" },
              React.createElement("div", { className: "admin-header" },
@@ -2546,7 +2531,7 @@ const AdminPanel = ({ products, seriesTemplates, storeSettings, collarTypes, con
                         React.createElement(GenderManager, { genderTemplates: genderTemplates, onFetchData: onFetchData, t: t })
                     )
                 ),
-                activeTab === 'settings' && React.createElement(StoreSettingsEditor, { settings: storeSettings, onFetchData: onFetchData, t: t })
+                activeTab === 'settings' && React.createElement(StoreSettingsEditor, { settings: storeSettings, onFetchData: onFetchData, t: t, onSettingsSave: onSettingsSave, onPasswordSave: onPasswordSave })
             )
         )
     );
@@ -3892,6 +3877,14 @@ const App = () => {
   const [adminActiveTab, setAdminActiveTab] = useState('products');
   const shareImageRef = useRef(null);
 
+  const handleSettingsUpdate = (updatedSettings) => {
+    setStoreSettings(updatedSettings);
+  };
+    
+  const handlePasswordUpdate = (newPassword) => {
+      setStoreSettings(prev => ({...prev, adminPassword: newPassword}));
+  };
+
   const isNewProduct = (createdAt) => {
     if (!createdAt) return false;
     const productDate = new Date(createdAt);
@@ -4455,8 +4448,8 @@ const App = () => {
           React.createElement("div", { className: "header-content" },
             React.createElement("div", { className: "store-info" },
                 storeSettings.logo && React.createElement("img", { src: storeSettings.logo, alt: "Store Logo", className: "store-logo-img", onClick: handleAdminToggle }),
-                React.createElement("h1", { className: "store-logo", onClick: handleAdminToggle }, storeSettings.name),
-                React.createElement("h1", { className: "store-name-mobile-gallery", onClick: handleAdminToggle, style: { color: storeSettings.nameColor || '#192A56' } }, storeSettings.name)
+                React.createElement("h1", { className: "store-logo", onClick: handleLayoutToggle }, storeSettings.name),
+                React.createElement("h1", { className: "store-name-mobile-gallery", onClick: () => window.location.reload(), style: { color: storeSettings.nameColor || '#192A56' } }, storeSettings.name)
             ),
             !isAdminView && (
                 React.createElement("div", { className: `search-bar desktop-search-bar ${isMobileSearchVisible ? 'mobile-search-bar-active' : ''}` },
@@ -4515,7 +4508,9 @@ const App = () => {
                 t,
                 activeTab: adminActiveTab,
                 onActiveTabChange: setAdminActiveTab,
-                onExit: () => setIsAdminView(false)
+                onExit: () => setIsAdminView(false),
+                onSettingsSave: handleSettingsUpdate,
+                onPasswordSave: handlePasswordUpdate
              })
           ) : (
             layout === 'gallery' ? (
