@@ -3967,9 +3967,8 @@ const App = () => {
           }
           
            // Fetch Store Settings
-          const { data: settingsData, error: settingsError } = await db.from('store_settings').select('*').eq('id', 1).maybeSingle();
+          const { data: settingsData, error: settingsError } = await db.from('store_settings').select('*').eq('id', 1).single();
           if (settingsError) throw settingsError;
-          
           if (settingsData) {
               setStoreSettings({
                   name: settingsData.name,
@@ -3980,10 +3979,6 @@ const App = () => {
                   nameColor: settingsData.name_color,
                   adminPassword: settingsData.admin_password || 'klm!44'
               });
-          } else {
-              // If no settings are found, use defaults to prevent app crash and "Loading..." text.
-              console.warn("No store settings found for ID=1. Using default name.");
-              setStoreSettings(prev => ({ ...prev, name: 'CAPORİCCO' }));
           }
 
       } catch (error) {
