@@ -1,4 +1,4 @@
-const APP_CACHE_NAME = 'b2b-catalog-cache-v3';
+const APP_CACHE_NAME = 'b2b-catalog-cache-v4';
 const DATA_CACHE_NAME = 'b2b-data-cache-v1';
 const IMAGE_CACHE_NAME = 'b2b-image-cache-v1';
 
