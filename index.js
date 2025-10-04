@@ -3975,7 +3975,7 @@ const App = () => {
           }
           
            // Fetch Store Settings
-          const { data: settingsData, error: settingsError } = await db.from('store_settings').select('*').eq('id', 1).single();
+          const { data: settingsData, error: settingsError } = await db.from('store_settings').select('*').eq('id', 1).maybeSingle();
           if (settingsError) throw settingsError;
           if (settingsData) {
               setStoreSettings({
