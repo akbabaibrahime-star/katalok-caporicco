@@ -3888,15 +3888,41 @@ const App = () => {
   const fetchData = async (preventLoader = false) => {
       if (!preventLoader) setLoading(true);
       try {
-          // Fetch Products with variants and series
+          // Fetch data in separate queries to be resilient against broken FK relationships
           const { data: productsData, error: productsError } = await db
               .from('products')
-              .select('*, variants(*, series(*))')
+              .select('*')
               .order('created_at', { ascending: false });
-
           if (productsError) throw productsError;
-          
-          const formattedProducts = productsData.map((p) => ({
+
+          const { data: variantsData, error: variantsError } = await db.from('variants').select('*');
+          if (variantsError) throw variantsError;
+
+          const { data: seriesData, error: seriesError } = await db.from('series').select('*');
+          if (seriesError) throw seriesError;
+
+          // Manually join the data in JavaScript
+          const seriesByVariantId = seriesData.reduce((acc, s) => {
+              const formattedSeries = { ...s, id: String(s.id) };
+              (acc[s.variant_id] = acc[s.variant_id] || []).push(formattedSeries);
+              return acc;
+          }, {});
+
+          const variantsByProductId = variantsData.reduce((acc, v) => {
+              const formattedVariant = {
+                  ...v,
+                  id: String(v.id),
+                  colorName: v.color_name,
+                  colorCode: v.color_code,
+                  imageUrl: v.image_url,
+                  video_url: v.video_url,
+                  series: seriesByVariantId[v.id] || []
+              };
+              (acc[v.product_id] = acc[v.product_id] || []).push(formattedVariant);
+              return acc;
+          }, {});
+
+          const formattedProducts = productsData.map(p => ({
               ...p,
               id: String(p.id),
               video_url: p.video_url,
@@ -3906,15 +3932,7 @@ const App = () => {
               gender: p.gender,
               discountPercentage: p.discount_percentage,
               created_at: p.created_at,
-              variants: (p.variants || []).map((v) => ({
-                  ...v,
-                  id: String(v.id),
-                  colorName: v.color_name,
-                  colorCode: v.color_code,
-                  imageUrl: v.image_url,
-                  video_url: v.video_url,
-                  series: (v.series || []).map((s) => ({ ...s, id: String(s.id) }))
-              }))
+              variants: variantsByProductId[p.id] || []
           }));
           setProducts(formattedProducts);
 
@@ -3964,7 +3982,7 @@ const App = () => {
           }
 
       } catch (error) {
-          console.error("Error fetching data:", error);
+          console.error("Error fetching data:", error.message || error);
       } finally {
           if (!preventLoader) setLoading(false);
       }
