@@ -1,4 +1,4 @@
-const APP_CACHE_NAME = 'b2b-catalog-cache-v4';
+const APP_CACHE_NAME = 'b2b-catalog-cache-v3';
 const DATA_CACHE_NAME = 'b2b-data-cache-v1';
 const IMAGE_CACHE_NAME = 'b2b-image-cache-v1';
 
@@ -8,6 +8,8 @@ const urlsToCache = [
   '/index.css',
   '/index.js',
   '/manifest.json',
+  '/icon-192x192.png',
+  '/icon-512x512.png',
   'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
   'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',
   'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js',
