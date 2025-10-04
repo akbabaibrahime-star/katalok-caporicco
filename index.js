@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo, useRef, forwardRef, useEffect, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
 
@@ -4440,8 +4441,8 @@ const App = () => {
           React.createElement("div", { className: "header-content" },
             React.createElement("div", { className: "store-info" },
                 storeSettings.logo && React.createElement("img", { src: storeSettings.logo, alt: "Store Logo", className: "store-logo-img", onClick: handleAdminToggle }),
-                React.createElement("h1", { className: "store-logo", onClick: handleLayoutToggle }, storeSettings.name),
-                React.createElement("h1", { className: "store-name-mobile-gallery", onClick: () => window.location.reload(), style: { color: storeSettings.nameColor || '#192A56' } }, storeSettings.name)
+                React.createElement("h1", { className: "store-logo", onClick: handleAdminToggle }, storeSettings.name),
+                React.createElement("h1", { className: "store-name-mobile-gallery", onClick: handleAdminToggle, style: { color: storeSettings.nameColor || '#192A56' } }, storeSettings.name)
             ),
             !isAdminView && (
                 React.createElement("div", { className: `search-bar desktop-search-bar ${isMobileSearchVisible ? 'mobile-search-bar-active' : ''}` },
