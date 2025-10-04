@@ -1,4 +1,4 @@
-const APP_CACHE_NAME = 'b2b-catalog-cache-v3';
+const APP_CACHE_NAME = 'b2b-catalog-cache-v4';
 const DATA_CACHE_NAME = 'b2b-data-cache-v1';
 const IMAGE_CACHE_NAME = 'b2b-image-cache-v1';
 
@@ -21,11 +21,9 @@ self.addEventListener('install', event => {
     caches.open(APP_CACHE_NAME)
       .then(cache => {
         console.log('Opened app cache');
-        // Use addAll for atomic caching. If one file fails, the entire install fails.
-        // This is desirable for the core app shell to ensure integrity.
         return cache.addAll(urlsToCache);
       })
-      .then(() => self.skipWaiting()) // Force the waiting service worker to become the active service worker.
+      .then(() => self.skipWaiting())
   );
 });
 
@@ -41,7 +39,7 @@ self.addEventListener('activate', event => {
           }
         })
       );
-    }).then(() => self.clients.claim()) // Become the service worker for all open clients.
+    }).then(() => self.clients.claim())
   );
 });
 
@@ -49,28 +47,22 @@ self.addEventListener('fetch', event => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Ignore non-GET requests
   if (request.method !== 'GET') {
     return;
   }
 
-  // Strategy for Supabase API calls (e.g., /rest/v1/): Network-first, fallback to cache
+  // Strategy for Supabase API (Network-first, fallback to cache)
   if (url.hostname.includes('supabase.co') && !url.pathname.includes('/storage/v1/')) {
     event.respondWith(
-      caches.open(DATA_CACHE_NAME).then(cache => {
-        return fetch(request)
-          .then(networkResponse => {
-            // If the network request is successful, cache it and return it
-            if (networkResponse.ok) {
-              cache.put(request, networkResponse.clone());
-            }
-            return networkResponse;
-          })
-          .catch(() => {
-            // If the network fails, try to serve the response from the cache
-            return cache.match(request);
+      fetch(request)
+        .then(networkResponse => {
+          const responseToCache = networkResponse.clone();
+          caches.open(DATA_CACHE_NAME).then(cache => {
+            cache.put(request, responseToCache);
           });
-      })
+          return networkResponse;
+        })
+        .catch(() => caches.match(request))
     );
     return;
   }
@@ -86,7 +78,6 @@ self.addEventListener('fetch', event => {
             }
             return networkResponse;
           });
-          // Return the cached response immediately if available, and update cache in background.
           return cachedResponse || fetchPromise;
         });
       })
@@ -94,16 +85,34 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Strategy for app shell and other assets (Cache First)
+  // Strategy for Navigation requests (Network-first, fallback to cache)
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request)
+        .then(networkResponse => {
+          const responseToCache = networkResponse.clone();
+          caches.open(APP_CACHE_NAME).then(cache => {
+            cache.put(request, responseToCache);
+          });
+          return networkResponse;
+        })
+        .catch(() => caches.match(request))
+    );
+    return;
+  }
+
+  // Strategy for other app assets (Stale-While-Revalidate)
   event.respondWith(
-    caches.match(request)
-      .then(response => {
-        // Cache hit - return response
-        if (response) {
-          return response;
-        }
-        // Not in cache - fetch from network
-        return fetch(request);
-      })
+    caches.open(APP_CACHE_NAME).then(cache => {
+      return cache.match(request).then(cachedResponse => {
+        const fetchPromise = fetch(request).then(networkResponse => {
+          if (networkResponse.ok) {
+            cache.put(request, networkResponse.clone());
+          }
+          return networkResponse;
+        });
+        return cachedResponse || fetchPromise;
+      });
+    })
   );
 });
