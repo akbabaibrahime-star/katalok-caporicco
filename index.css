@@ -586,18 +586,18 @@ main {
 
 
 .cart-footer {
-  padding: 20px;
+  padding: 16px;
   border-top: 1px solid var(--border-color);
   background-color: var(--background-color);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .cart-stats-summary {
     display: flex;
-    justify-content: space-around;
+    justify-content: space-between;
     text-align: center;
-    padding-bottom: 16px;
-    margin-bottom: 16px;
-    border-bottom: 1px dashed var(--border-color);
 }
 .stat-row {
     display: flex;
@@ -606,21 +606,20 @@ main {
 }
 .stat-row span:first-child { /* Label */
     order: 2;
-    font-size: 0.9rem;
+    font-size: 0.8rem;
     color: var(--secondary-color);
 }
 .stat-row span:last-child { /* Value */
     order: 1;
     font-weight: 600;
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     color: var(--text-color);
 }
 
 .totals-summary .total-row {
   display: flex;
   justify-content: space-between;
-  font-size: 1.1rem;
-  margin-bottom: 12px;
+  font-size: 1rem;
 }
 .totals-summary .total-row span:first-child {
     font-weight: 500;
@@ -628,12 +627,12 @@ main {
 .totals-summary .total-row span:last-child {
     font-weight: 700;
     color: var(--primary-color);
+    font-size: 1.2rem;
 }
 
 .cart-footer-actions {
     display: flex;
     gap: 10px;
-    margin-top: 10px;
     flex-wrap: wrap;
 }
 
@@ -646,16 +645,15 @@ main {
 
 .share-order-btn {
   width: 100%;
-  padding: 16px;
+  padding: 12px;
   background-color: var(--success-color);
   color: white;
   border: none;
   border-radius: var(--border-radius);
-  font-size: 1.2rem;
+  font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
   text-align: center;
-  margin-top: 16px;
   transition: background-color var(--transition-speed);
 }
 .share-order-btn:hover {
@@ -667,17 +665,16 @@ main {
 }
 
 .download-excel-btn {
-  width: 100%;
-  padding: 16px;
+  flex: 1;
+  padding: 12px;
   background-color: var(--primary-color);
   color: white;
   border: none;
   border-radius: var(--border-radius);
-  font-size: 1.2rem;
+  font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
   text-align: center;
-  margin-top: 10px;
   transition: background-color var(--transition-speed);
   display: flex;
   align-items: center;
