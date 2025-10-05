@@ -193,7 +193,6 @@ const translations = {
     excelIcerik: "Content %",
     excelDokuma: "Weave",
     excelRenk: "Color",
-    excelBedenPrefix: "SIZE-",
     excelToplam: "Total",
     excelBeden: "SIZE",
     excelAdet: "QTY",
@@ -368,7 +367,6 @@ const translations = {
     excelIcerik: "İÇERİK %",
     excelDokuma: "DOKUMA/ÖRME",
     excelRenk: "RENK",
-    excelBedenPrefix: "BEDEN-",
     excelToplam: "TOPLAM",
     excelBeden: "BEDEN",
     excelAdet: "ADET",
@@ -543,7 +541,6 @@ const translations = {
     excelIcerik: "СОСТАВ %",
     excelDokuma: "ШВЕЙКА/ТРИКОТАЖ",
     excelRenk: "ЦВЕТ",
-    excelBedenPrefix: "РАЗМЕР-",
     excelToplam: "ИТОГО",
     excelBeden: "РАЗМЕР",
     excelAdet: "КОЛИЧЕСТВО",
@@ -1027,27 +1024,29 @@ const CartSidebar = ({ isOpen, onClose, cartItems, onRemoveItem, onUpdateQuantit
                 React.createElement("button", { className: "share-order-btn", onClick: onShareOrder, disabled: isSharing || isDownloadingGrid || isDownloadingList },
                     isSharing ? t.sharingOrder : t.shareOrder
                 ),
-                React.createElement("button", { 
-                    className: "download-excel-btn", 
-                    onClick: onDownloadExcel, 
-                    disabled: isDownloadingGrid || isDownloadingList || isSharing 
-                },
-                    isDownloadingGrid ? t.downloading : (
-                        React.createElement(React.Fragment, null, 
-                            React.createElement(DownloadIcon, null),
-                            t.downloadExcelGrid
+                React.createElement("div", { className: "cart-footer-actions" },
+                    React.createElement("button", { 
+                        className: "download-excel-btn", 
+                        onClick: onDownloadExcel, 
+                        disabled: isDownloadingGrid || isDownloadingList || isSharing 
+                    },
+                        isDownloadingGrid ? t.downloading : (
+                            React.createElement(React.Fragment, null, 
+                                React.createElement(DownloadIcon, null),
+                                t.downloadExcelGrid
+                            )
                         )
-                    )
-                ),
-                React.createElement("button", { 
-                    className: "download-excel-btn", 
-                    onClick: onDownloadExcelList, 
-                    disabled: isDownloadingGrid || isDownloadingList || isSharing 
-                },
-                    isDownloadingList ? t.downloading : (
-                        React.createElement(React.Fragment, null, 
-                            React.createElement(DownloadIcon, null),
-                            t.downloadExcelList
+                    ),
+                    React.createElement("button", { 
+                        className: "download-excel-btn", 
+                        onClick: onDownloadExcelList, 
+                        disabled: isDownloadingGrid || isDownloadingList || isSharing 
+                    },
+                        isDownloadingList ? t.downloading : (
+                            React.createElement(React.Fragment, null, 
+                                React.createElement(DownloadIcon, null),
+                                t.downloadExcelList
+                            )
                         )
                     )
                 )
@@ -4483,7 +4482,7 @@ const App = () => {
                 t.excelIcerik,
                 t.excelDokuma,
                 t.excelRenk,
-                ...sortedSizes.map(size => `${t.excelBedenPrefix}${size}`),
+                ...sortedSizes,
                 t.excelToplam,
             ];
             
@@ -4507,7 +4506,7 @@ const App = () => {
                 let rowTotal = 0;
                 sortedSizes.forEach(size => {
                     const qty = group.sizeTotals.get(size) || '';
-                    row[`${t.excelBedenPrefix}${size}`] = qty;
+                    row[size] = qty;
                     if (qty) {
                         rowTotal += qty;
                     }
@@ -4523,7 +4522,6 @@ const App = () => {
             let ws;
 
             if (dataForSheet.length > 0) {
-                // Add an empty row and the total row
                 dataForSheet.push({}); // Empty row for spacing
                 const totalRow = {};
                 totalRow[t.excelRenk] = t.excelToplam.toUpperCase(); // Label in 'RENK' column
@@ -4531,6 +4529,52 @@ const App = () => {
                 dataForSheet.push(totalRow);
 
                 ws = XLSX.utils.json_to_sheet(dataForSheet, { header: headers });
+                
+                const range = XLSX.utils.decode_range(ws['!ref']);
+                const sizeColStartIndex = sortedSizes.length > 0 ? headers.indexOf(sortedSizes[0]) : -1;
+                const sizeColEndIndex = sortedSizes.length > 0 ? headers.indexOf(sortedSizes[sortedSizes.length - 1]) : -1;
+                const totalColIndex = headers.indexOf(t.excelToplam);
+                const centerStyle = { alignment: { horizontal: "center", vertical: "center" } };
+
+                for (let R = range.s.r; R <= range.e.r; R++) { // R=0 is header
+                    // Style size columns
+                    if (sizeColStartIndex !== -1) {
+                        for (let C = sizeColStartIndex; C <= sizeColEndIndex; C++) {
+                            const cell_ref = XLSX.utils.encode_cell({ r: R, c: C });
+                            if (ws[cell_ref]) {
+                                ws[cell_ref].s = centerStyle;
+                            }
+                        }
+                    }
+                    // Style total column
+                    if (totalColIndex !== -1) {
+                        const cell_ref = XLSX.utils.encode_cell({ r: R, c: totalColIndex });
+                        if (ws[cell_ref]) {
+                            ws[cell_ref].s = centerStyle;
+                        }
+                    }
+                }
+                
+                const colWidths = headers.map(header => {
+                    if (sortedSizes.includes(header)) {
+                        // Tighter, centered columns for sizes. Base width on header or a 3-digit number.
+                        return { wch: Math.max(String(header).length, 4) + 2 };
+                    }
+                    
+                    let maxLength = header ? header.length : 10;
+                    dataForSheet.forEach(row => {
+                        const cellValue = row[header];
+                        if (cellValue != null) {
+                            const cellLength = String(cellValue).length;
+                            if (cellLength > maxLength) {
+                                maxLength = cellLength;
+                            }
+                        }
+                    });
+                    return { wch: maxLength + 2 };
+                });
+                ws['!cols'] = colWidths;
+
             } else {
                 ws = XLSX.utils.json_to_sheet([], { header: headers });
             }
@@ -4608,6 +4652,22 @@ const App = () => {
                 };
                 dataForSheet.push(totalRow);
                 ws = XLSX.utils.json_to_sheet(dataForSheet, { header: headers });
+
+                const colWidths = headers.map(header => {
+                    let maxLength = header ? header.length : 10;
+                    dataForSheet.forEach(row => {
+                        const cellValue = row[header];
+                        if (cellValue != null) {
+                            const cellLength = String(cellValue).length;
+                            if (cellLength > maxLength) {
+                                maxLength = cellLength;
+                            }
+                        }
+                    });
+                    return { wch: maxLength + 2 };
+                });
+                ws['!cols'] = colWidths;
+
             } else {
                 ws = XLSX.utils.json_to_sheet([], { header: headers });
             }
