@@ -617,6 +617,20 @@ main {
     color: var(--primary-color);
 }
 
+.cart-footer-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.cart-footer-actions > .download-excel-btn {
+    flex: 1;
+    margin-top: 0;
+    padding: 12px;
+    font-size: 1rem;
+    white-space: nowrap;
+}
+
 .share-order-btn {
   width: 100%;
   padding: 16px;
