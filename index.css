@@ -424,24 +424,37 @@ main {
 }
 
 .cart-header {
-  padding: 20px;
+  padding: 12px 20px;
   border-bottom: 1px solid var(--border-color);
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .cart-header h2 {
-  font-size: 1.5rem;
+  font-size: 1.2rem;
+  margin: 0;
 }
 
 .close-cart-btn {
   background: none;
   border: none;
-  font-size: 2rem;
+  font-size: 1.8rem;
   cursor: pointer;
   color: var(--secondary-color);
   line-height: 1;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color var(--transition-speed);
+}
+
+.close-cart-btn:hover {
+  background-color: var(--background-color);
 }
 
 .cart-body {
