@@ -196,6 +196,7 @@ const translations = {
     excelToplam: "Total",
     excelBeden: "SIZE",
     excelAdet: "QTY",
+    orderSummary: "Order Summary",
   },
   tr: {
     searchPlaceholder: "Ürün adı veya koduyla ara...",
@@ -370,6 +371,7 @@ const translations = {
     excelToplam: "TOPLAM",
     excelBeden: "BEDEN",
     excelAdet: "ADET",
+    orderSummary: "Sipariş Özeti",
   },
   ru: {
     searchPlaceholder: "Поиск по названию или коду товара...",
@@ -544,6 +546,7 @@ const translations = {
     excelToplam: "ИТОГО",
     excelBeden: "РАЗМЕР",
     excelAdet: "КОЛИЧЕСТВО",
+    orderSummary: "Сводка заказа",
   },
 };
 
@@ -596,6 +599,8 @@ const VideoIcon = () => React.createElement("svg", { xmlns: "http://www.w3.org/2
 const VolumeOnIcon = () => React.createElement("svg", { xmlns: "http://www.w3.org/2000/svg", width: "24", height: "24", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" }, React.createElement("polygon", { points: "11 5 6 9 2 9 2 15 6 15 11 19 11 5" }), React.createElement("path", { d: "M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" }));
 const VolumeOffIcon = () => React.createElement("svg", { xmlns: "http://www.w3.org/2000/svg", width: "24", height: "24", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" }, React.createElement("polygon", { points: "11 5 6 9 2 9 2 15 6 15 11 19 11 5" }), React.createElement("line", { x1: "23", y1: "9", x2: "17", y2: "15" }), React.createElement("line", { x1: "17", y1: "9", x2: "23", y2: "15" }));
 const ShareIconIos = () => React.createElement("svg", { style: { marginRight: '12px', flexShrink: 0 }, width: "32", height: "32", viewBox: "0 0 21 21", fill: "none", stroke: "currentColor", strokeWidth: "1.5", strokeLinecap: "round", strokeLinejoin: "round" }, React.createElement("path", { d: "M16.5 7.5l-5.964-5.964a.05.05 0 00-.071 0L4.5 7.5" }), React.createElement("path", { d: "M10.5 1.5v12" }), React.createElement("path", { d: "M7.5 6.5h-4a2 2 0 00-2 2v9a2 2 0 002 2h13a2 2 0 002-2v-9a2 2 0 00-2-2h-4" }));
+const ChevronUpIcon = () => React.createElement("svg", { xmlns: "http://www.w3.org/2000/svg", width: "24", height: "24", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" }, React.createElement("polyline", { points: "18 15 12 9 6 15" }));
+const ChevronDownIcon = () => React.createElement("svg", { xmlns: "http://www.w3.org/2000/svg", width: "24", height: "24", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" }, React.createElement("polyline", { points: "6 9 12 15 18 9" }));
 
 
 const getTranslationKey = (str) => {
@@ -905,6 +910,8 @@ const ProductCard = ({ product, onSelectOptions, t }) => {
 
 // --- CART COMPONENT ---
 const CartSidebar = ({ isOpen, onClose, cartItems, onRemoveItem, onUpdateQuantity, onShareOrder, isSharing, cartStats, t, onDownloadExcel, onDownloadExcelList, isDownloadingGrid, isDownloadingList }) => {
+    const [isDetailsPanelOpen, setIsDetailsPanelOpen] = useState(false);
+
     const totals = useMemo(() => {
         return cartItems.reduce((acc, item) => {
             const { currency, price } = item.series;
@@ -998,57 +1005,103 @@ const CartSidebar = ({ isOpen, onClose, cartItems, onRemoveItem, onUpdateQuantit
               )
             ),
             cartItems.length > 0 && (
-              React.createElement("footer", { className: "cart-footer" },
-                React.createElement("div", { className: "cart-stats-summary" },
-                   React.createElement("div", { className: "stat-row" },
-                       React.createElement("span", null, t.itemTypes),
-                       React.createElement("span", null, cartStats.totalItemTypes)
-                   ),
-                   React.createElement("div", { className: "stat-row" },
-                       React.createElement("span", null, t.totalPacks),
-                       React.createElement("span", null, cartStats.totalPacks)
-                   ),
-                   React.createElement("div", { className: "stat-row" },
-                       React.createElement("span", null, t.totalUnits),
-                       React.createElement("span", null, cartStats.totalUnits)
-                   )
-                ),
-                React.createElement("div", { className: "totals-summary" },
-                   Object.entries(totals).map(([currency, total]) => (
-                     React.createElement("div", { key: currency, className: "total-row" },
-                        React.createElement("span", null, `${t.total} (${currency})`),
-                        React.createElement("span", null, formatCurrency(total, currency))
-                     )
-                   ))
-                ),
-                React.createElement("button", { className: "share-order-btn", onClick: onShareOrder, disabled: isSharing || isDownloadingGrid || isDownloadingList },
-                    isSharing ? t.sharingOrder : t.shareOrder
-                ),
-                React.createElement("div", { className: "cart-footer-actions" },
-                    React.createElement("button", { 
-                        className: "download-excel-btn", 
-                        onClick: onDownloadExcel, 
-                        disabled: isDownloadingGrid || isDownloadingList || isSharing 
-                    },
-                        isDownloadingGrid ? t.downloading : (
-                            React.createElement(React.Fragment, null, 
-                                React.createElement(DownloadIcon, null),
-                                t.downloadExcelGrid
-                            )
-                        )
+              React.createElement("div", { className: "cart-footer-container" },
+                React.createElement("div", { className: `cart-details-panel ${isDetailsPanelOpen ? 'open' : ''}` },
+                  React.createElement("header", { className: "panel-header", onClick: () => setIsDetailsPanelOpen(false) },
+                    React.createElement("h3", null, t.orderSummary),
+                    React.createElement("button", { "aria-label": t.close }, React.createElement(ChevronDownIcon, null))
+                  ),
+                  React.createElement("div", { className: "panel-content" },
+                    React.createElement("div", { className: "cart-stats-summary" },
+                       React.createElement("div", { className: "stat-row" },
+                           React.createElement("span", null, t.itemTypes),
+                           React.createElement("span", null, cartStats.totalItemTypes)
+                       ),
+                       React.createElement("div", { className: "stat-row" },
+                           React.createElement("span", null, t.totalPacks),
+                           React.createElement("span", null, cartStats.totalPacks)
+                       ),
+                       React.createElement("div", { className: "stat-row" },
+                           React.createElement("span", null, t.totalUnits),
+                           React.createElement("span", null, cartStats.totalUnits)
+                       )
                     ),
-                    React.createElement("button", { 
-                        className: "download-excel-btn", 
-                        onClick: onDownloadExcelList, 
-                        disabled: isDownloadingGrid || isDownloadingList || isSharing 
-                    },
-                        isDownloadingList ? t.downloading : (
-                            React.createElement(React.Fragment, null, 
-                                React.createElement(DownloadIcon, null),
-                                t.downloadExcelList
+                    React.createElement("div", { className: "totals-summary" },
+                       Object.entries(totals).map(([currency, total]) => (
+                         React.createElement("div", { key: currency, className: "total-row" },
+                            React.createElement("span", null, `${t.total} (${currency})`),
+                            React.createElement("span", null, formatCurrency(total, currency))
+                         )
+                       ))
+                    ),
+                    React.createElement("button", { className: "share-order-btn", onClick: onShareOrder, disabled: isSharing || isDownloadingGrid || isDownloadingList },
+                        isSharing ? t.sharingOrder : t.shareOrder
+                    ),
+                    React.createElement("div", { className: "cart-footer-actions" },
+                        React.createElement("button", { 
+                            className: "download-excel-btn", 
+                            onClick: onDownloadExcel, 
+                            disabled: isDownloadingGrid || isDownloadingList || isSharing 
+                        },
+                            isDownloadingGrid ? t.downloading : (
+                                React.createElement(React.Fragment, null, 
+                                    React.createElement(DownloadIcon, null),
+                                    t.downloadExcelGrid
+                                )
+                            )
+                        ),
+                        React.createElement("button", { 
+                            className: "download-excel-btn", 
+                            onClick: onDownloadExcelList, 
+                            disabled: isDownloadingGrid || isDownloadingList || isSharing 
+                        },
+                            isDownloadingList ? t.downloading : (
+                                React.createElement(React.Fragment, null, 
+                                    React.createElement(DownloadIcon, null),
+                                    t.downloadExcelList
+                                )
                             )
                         )
                     )
+                  )
+                ),
+                React.createElement("div", { 
+                  className: `cart-summary-bar ${isDetailsPanelOpen ? 'hidden' : ''}`,
+                  onClick: () => setIsDetailsPanelOpen(true),
+                  role: "button",
+                  tabIndex: "0",
+                  "aria-haspopup": "true",
+                  "aria-expanded": isDetailsPanelOpen
+                },
+                  React.createElement("div", { className: "cart-summary-content" },
+                    React.createElement("div", { className: "cart-summary-stats-container" },
+                        React.createElement("div", { className: "cart-summary-stat-item" },
+                            React.createElement("span", null, cartStats.totalItemTypes),
+                            React.createElement("span", null, t.itemTypes)
+                        ),
+                        React.createElement("div", { className: "cart-summary-stat-item" },
+                            React.createElement("span", null, cartStats.totalPacks),
+                            React.createElement("span", null, t.totalPacks)
+                        ),
+                        React.createElement("div", { className: "cart-summary-stat-item" },
+                            React.createElement("span", null, cartStats.totalUnits),
+                            React.createElement("span", null, t.totalUnits)
+                        )
+                    ),
+                    React.createElement("div", { className: "cart-summary-total" },
+                      Object.entries(totals).length > 0 ? (
+                        Object.entries(totals).map(([currency, total]) => (
+                          React.createElement("div", { key: currency, className: "total-row" },
+                             React.createElement("span", null, `${t.total} (${currency})`),
+                             React.createElement("span", null, formatCurrency(total, currency))
+                          )
+                        ))
+                      ) : (
+                        React.createElement("div", { className: "total-row" }, React.createElement("span", null, t.total), React.createElement("span", null, "-"))
+                      )
+                    )
+                  ),
+                  React.createElement(ChevronUpIcon, null)
                 )
               )
             )
