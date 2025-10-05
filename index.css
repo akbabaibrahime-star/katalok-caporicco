@@ -621,14 +621,14 @@ main {
     display: flex;
     gap: 10px;
     margin-top: 10px;
+    flex-wrap: wrap;
 }
 
 .cart-footer-actions > .download-excel-btn {
-    flex: 1;
+    flex: 1 1 160px;
     margin-top: 0;
     padding: 12px;
     font-size: 1rem;
-    white-space: nowrap;
 }
 
 .share-order-btn {
