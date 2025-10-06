@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useMemo, useRef, forwardRef, useEffect, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
 
@@ -911,17 +912,24 @@ const ProductCard = ({ product, onSelectOptions, t }) => {
 // --- CART COMPONENT ---
 const CartSidebar = ({ isOpen, onClose, cartItems, onRemoveItem, onUpdateQuantity, onShareOrder, isSharing, cartStats, t, onDownloadExcel, onDownloadExcelList, isDownloadingGrid, isDownloadingList }) => {
     const [isDetailsPanelOpen, setIsDetailsPanelOpen] = useState(false);
+    const [expandedVariantId, setExpandedVariantId] = useState(null);
+
+    const handleToggleExpand = (variantId) => {
+        setExpandedVariantId(prevId => (prevId === variantId ? null : variantId));
+    };
 
     const totals = useMemo(() => {
         return cartItems.reduce((acc, item) => {
-            const { currency, price } = item.series;
             const discount = item.discountPercentage || 0;
-            const discountedPrice = price * (1 - (discount / 100));
-            const quantity = Number(item.quantity || 0);
-            if (!acc[currency]) {
-                acc[currency] = 0;
-            }
-            acc[currency] += discountedPrice * quantity;
+            item.series.forEach(s => {
+                const { currency, price, quantity } = s;
+                const discountedPrice = price * (1 - (discount / 100));
+                const numQuantity = Number(quantity || 0);
+                if (!acc[currency]) {
+                    acc[currency] = 0;
+                }
+                acc[currency] += discountedPrice * numQuantity;
+            });
             return acc;
         }, {});
     }, [cartItems]);
@@ -938,66 +946,83 @@ const CartSidebar = ({ isOpen, onClose, cartItems, onRemoveItem, onUpdateQuantit
               cartItems.length === 0 ? (
                 React.createElement("p", { className: "cart-empty-message" }, t.emptyCart)
               ) : (
-                cartItems.map((item, index) => {
-                    const hasDiscount = typeof item.discountPercentage === 'number' && item.discountPercentage > 0;
-                    const seriesPrice = item.series.price;
-                    const discountedSeriesPrice = hasDiscount ? seriesPrice * (1 - (item.discountPercentage / 100)) : seriesPrice;
-
-                    const units = getUnitsPerSeries(item.series.name);
-                    const unitPrice = units > 1 ? seriesPrice / units : null;
-                    const discountedUnitPrice = (unitPrice && hasDiscount) ? unitPrice * (1 - (item.discountPercentage / 100)) : unitPrice;
+                cartItems.map((item) => {
+                    const { productName, productCode, discountPercentage, variant, series } = item;
+                    const hasDiscount = typeof discountPercentage === 'number' && discountPercentage > 0;
+                    const isExpanded = expandedVariantId === variant.id;
 
                     return (
-                        React.createElement("div", { key: `${item.series.id}-${index}`, className: "cart-item" },
-                            React.createElement("img", { src: getTransformedImageUrl(item.variant.imageUrl, { width: 160, height: 220 }), alt: item.variant.colorName, className: "cart-item-img", crossOrigin: "anonymous" }),
-                            React.createElement("div", { className: "cart-item-details" },
-                                React.createElement("div", { className: "cart-item-description" },
+                        React.createElement("div", { key: variant.id, className: `cart-item-group ${isExpanded ? 'expanded' : ''}` },
+                            React.createElement("div", { className: "cart-item-group-header", onClick: () => handleToggleExpand(variant.id) },
+                                React.createElement("img", { src: getTransformedImageUrl(variant.imageUrl, { width: 120, height: 160 }), alt: variant.colorName, className: "cart-item-img", crossOrigin: "anonymous" }),
+                                React.createElement("div", { className: "cart-item-group-info" },
                                     React.createElement("p", null, 
-                                        item.productName,
-                                        hasDiscount && React.createElement("span", { className: "discount-tag", style: { marginLeft: '8px' } }, `%${item.discountPercentage}`)
+                                        productName,
+                                        hasDiscount && React.createElement("span", { className: "discount-tag", style: { marginLeft: '8px' } }, `%${discountPercentage}`)
                                     ),
-                                    React.createElement("p", null, item.productCode),
-                                    React.createElement("p", null, item.variant.colorName),
-                                    React.createElement("p", null, item.series.name),
-                                    unitPrice !== null && (
-                                        React.createElement("p", { className: "cart-item-unit-price" },
-                                            "(",
-                                            hasDiscount ?
-                                            React.createElement(React.Fragment, null,
-                                                React.createElement("span", { className: "original-price" }, formatCurrency(unitPrice, item.series.currency)),
-                                                " ",
-                                                React.createElement("span", null, formatCurrency(discountedUnitPrice, item.series.currency))
-                                            ) :
-                                            React.createElement("span", null, formatCurrency(unitPrice, item.series.currency)),
-                                            ` ${t.perPiece})`
-                                        )
-                                    )
+                                    React.createElement("p", null, productCode),
+                                    React.createElement("p", null, variant.colorName)
                                 ),
-                                React.createElement("div", { className: "cart-item-actions" },
-                                    React.createElement("div", { className: "cart-item-quantity-editor" },
-                                    React.createElement("button", { onClick: () => onUpdateQuantity(item.series.id, Number(item.quantity || 0) - 1), "aria-label": "Decrease quantity" }, React.createElement(MinusIcon, null)),
-                                    React.createElement("input", {
-                                        type: "number",
-                                        value: item.quantity,
-                                        onChange: (e) => {
-                                            const val = Number.parseInt(e.target.value, 10);
-                                            if (!isNaN(val)) onUpdateQuantity(item.series.id, val);
-                                        },
-                                        "aria-label": "Item quantity"
-                                    }),
-                                    React.createElement("button", { onClick: () => onUpdateQuantity(item.series.id, Number(item.quantity || 0) + 1), "aria-label": "Increase quantity" }, React.createElement(PlusIcon, null)),
-                                    ),
-                                    React.createElement("div", { className: "cart-item-line-total" },
-                                        hasDiscount && React.createElement("span", {
-                                            className: "original-price",
-                                            style: { display: 'block', fontSize: '0.8em', fontWeight: '400' }
-                                        }, formatCurrency(Number(item.quantity || 0) * seriesPrice, item.series.currency)),
-                                        formatCurrency(Number(item.quantity || 0) * discountedSeriesPrice, item.series.currency)
-                                    ),
-                                    React.createElement("button", { className: "remove-item-btn", onClick: () => onRemoveItem(item.series.id), "aria-label": "Remove item" },
-                                    React.createElement(Trash2Icon, null)
-                                    )
+                                React.createElement("span", { className: "expand-indicator" },
+                                    isExpanded ? React.createElement(ChevronUpIcon, null) : React.createElement(ChevronDownIcon, null)
                                 )
+                            ),
+                            React.createElement("div", { className: "cart-series-list" },
+                                series.map(s => {
+                                    const seriesPrice = s.price;
+                                    const discountedSeriesPrice = hasDiscount ? seriesPrice * (1 - (discountPercentage / 100)) : seriesPrice;
+                                    const units = getUnitsPerSeries(s.name);
+                                    const unitPrice = units > 1 ? seriesPrice / units : null;
+                                    const discountedUnitPrice = (unitPrice && hasDiscount) ? unitPrice * (1 - (discountPercentage / 100)) : unitPrice;
+
+                                    return (
+                                        React.createElement("div", { key: s.id, className: "cart-series-row" },
+                                            React.createElement("p", { className: "cart-series-name-full" }, s.name),
+                                            React.createElement("div", { className: "cart-series-controls-line" },
+                                                React.createElement("div", { className: "cart-series-unit-price-wrapper" },
+                                                    unitPrice !== null && (
+                                                        React.createElement("p", { className: "cart-item-unit-price" },
+                                                            "(",
+                                                            hasDiscount ?
+                                                            React.createElement(React.Fragment, null,
+                                                                React.createElement("span", { className: "original-price" }, formatCurrency(unitPrice, s.currency)),
+                                                                " ",
+                                                                React.createElement("span", null, formatCurrency(discountedUnitPrice, s.currency))
+                                                            ) :
+                                                            React.createElement("span", null, formatCurrency(unitPrice, s.currency)),
+                                                            ` ${t.perPiece})`
+                                                        )
+                                                    )
+                                                ),
+                                                React.createElement("div", { className: "cart-item-actions" },
+                                                    React.createElement("div", { className: "cart-item-quantity-editor" },
+                                                        React.createElement("button", { onClick: () => onUpdateQuantity(variant.id, s.id, Number(s.quantity || 0) - 1), "aria-label": "Decrease quantity" }, React.createElement(MinusIcon, null)),
+                                                        React.createElement("input", {
+                                                            type: "number",
+                                                            value: s.quantity,
+                                                            onChange: (e) => {
+                                                                const val = Number.parseInt(e.target.value, 10);
+                                                                if (!isNaN(val)) onUpdateQuantity(variant.id, s.id, val);
+                                                            },
+                                                            "aria-label": "Item quantity"
+                                                        }),
+                                                        React.createElement("button", { onClick: () => onUpdateQuantity(variant.id, s.id, Number(s.quantity || 0) + 1), "aria-label": "Increase quantity" }, React.createElement(PlusIcon, null)),
+                                                    ),
+                                                    React.createElement("div", { className: "cart-item-line-total" },
+                                                        hasDiscount && React.createElement("span", {
+                                                            className: "original-price",
+                                                            style: { display: 'block', fontSize: '0.8em', fontWeight: '400' }
+                                                        }, formatCurrency(Number(s.quantity || 0) * seriesPrice, s.currency)),
+                                                        formatCurrency(Number(s.quantity || 0) * discountedSeriesPrice, s.currency)
+                                                    ),
+                                                    React.createElement("button", { className: "remove-item-btn", onClick: () => onRemoveItem(variant.id, s.id), "aria-label": "Remove item" },
+                                                        React.createElement(Trash2Icon, null)
+                                                    )
+                                                )
+                                            )
+                                        )
+                                    );
+                                })
                             )
                         )
                     );
@@ -1123,46 +1148,57 @@ const OrderShareImage = forwardRef(({ cartItems, totals, t, storeSettings, cartS
                 React.createElement("p", null, new Date().toLocaleString())
             ),
             React.createElement("div", { className: "order-share-body" },
-                cartItems.map((item, index) => {
-                    const hasDiscount = typeof item.discountPercentage === 'number' && item.discountPercentage > 0;
-                    const seriesPrice = item.series.price;
-                    const discountedSeriesPrice = hasDiscount ? seriesPrice * (1 - (item.discountPercentage / 100)) : seriesPrice;
-
-                    const units = getUnitsPerSeries(item.series.name);
-                    const unitPrice = units > 1 ? seriesPrice / units : null;
-                    const discountedUnitPrice = (unitPrice && hasDiscount) ? unitPrice * (1 - (item.discountPercentage / 100)) : unitPrice;
-
+                cartItems.map(item => {
+                    const { productName, productCode, discountPercentage, variant, series } = item;
+                    const hasDiscount = typeof discountPercentage === 'number' && discountPercentage > 0;
                     return (
-                        React.createElement("div", { key: `${item.series.id}-${index}`, className: "order-share-item" },
-                            React.createElement("img", { src: getTransformedImageUrl(item.variant.imageUrl, { width: 120, height: 120 }), alt: item.variant.colorName, className: "order-share-img", crossOrigin: "anonymous" }),
-                            React.createElement("div", { className: "order-share-details" },
-                                React.createElement("p", { className: "order-share-pname" },
-                                    item.productName, " ", React.createElement("span", { className: "order-share-pcode" }, `(${item.productCode})`),
-                                    hasDiscount && React.createElement("span", { className: "discount-tag", style: { marginLeft: '8px', fontSize: '0.7rem'} }, `%${item.discountPercentage}`)
-                                ),
-                                React.createElement("p", { className: "order-share-pseries" },
-                                    `${item.variant.colorName} - ${item.series.name}`,
-                                    unitPrice !== null && (
-                                        React.createElement("span", { className: "order-share-unit-price" },
-                                            " (",
-                                            hasDiscount ?
-                                            React.createElement(React.Fragment, null,
-                                                React.createElement("span", { className: "original-price" }, formatCurrency(unitPrice, item.series.currency)),
-                                                " / ",
-                                                React.createElement("span", null, formatCurrency(discountedUnitPrice, item.series.currency))
-                                            ) :
-                                            formatCurrency(unitPrice, item.series.currency),
-                                            `${t.perPiece})`
-                                        )
-                                    )
+                        React.createElement("div", { key: variant.id, className: "order-share-group" },
+                            React.createElement("div", { className: "order-share-group-header" },
+                                React.createElement("img", { src: getTransformedImageUrl(variant.imageUrl, { width: 120, height: 120 }), alt: variant.colorName, className: "order-share-img", crossOrigin: "anonymous" }),
+                                React.createElement("div", { className: "order-share-group-info" },
+                                    React.createElement("p", { className: "pname" },
+                                        productName, " ", React.createElement("span", { className: "pcode" }, `(${productCode})`),
+                                        hasDiscount && React.createElement("span", { className: "discount-tag", style: { marginLeft: '8px', fontSize: '0.7rem'} }, `%${discountPercentage}`)
+                                    ),
+                                    React.createElement("p", { className: "pcolor" }, variant.colorName)
                                 )
                             ),
-                            React.createElement("div", { className: "order-share-pricing" },
-                                React.createElement("p", { className: "price" }, 
-                                    hasDiscount && React.createElement("span", { className: "original-price", style: { display: 'block', fontSize: '0.8em', fontWeight: '400' } }, formatCurrency(Number(item.quantity || 0) * seriesPrice, item.series.currency)),
-                                    formatCurrency(Number(item.quantity || 0) * discountedSeriesPrice, item.series.currency)
-                                ),
-                                React.createElement("p", { className: "qty" }, `Qty: ${item.quantity}`)
+                            React.createElement("div", { className: "order-share-series-list" },
+                                series.map(s => {
+                                    const seriesPrice = s.price;
+                                    const discountedSeriesPrice = hasDiscount ? seriesPrice * (1 - (discountPercentage / 100)) : seriesPrice;
+                                    const units = getUnitsPerSeries(s.name);
+                                    const unitPrice = units > 1 ? seriesPrice / units : null;
+                                    const discountedUnitPrice = (unitPrice && hasDiscount) ? unitPrice * (1 - (discountPercentage / 100)) : unitPrice;
+
+                                    return (
+                                        React.createElement("div", { key: s.id, className: "order-share-series-item" },
+                                            React.createElement("div", { className: "details" },
+                                                React.createElement("p", { className: "series-name" }, s.name),
+                                                unitPrice !== null && (
+                                                    React.createElement("p", { className: "unit-price" },
+                                                        "(",
+                                                        hasDiscount ?
+                                                        React.createElement(React.Fragment, null,
+                                                            React.createElement("span", { className: "original-price" }, formatCurrency(unitPrice, s.currency)),
+                                                            " / ",
+                                                            React.createElement("span", null, formatCurrency(discountedUnitPrice, s.currency))
+                                                        ) :
+                                                        formatCurrency(unitPrice, s.currency),
+                                                        `${t.perPiece})`
+                                                    )
+                                                )
+                                            ),
+                                            React.createElement("div", { className: "pricing" },
+                                                React.createElement("p", { className: "price" }, 
+                                                    hasDiscount && React.createElement("span", { className: "original-price", style: { display: 'block', fontSize: '0.8em', fontWeight: '400' } }, formatCurrency(Number(s.quantity || 0) * seriesPrice, s.currency)),
+                                                    formatCurrency(Number(s.quantity || 0) * discountedSeriesPrice, s.currency)
+                                                ),
+                                                React.createElement("p", { className: "qty" }, `Qty: ${s.quantity}`)
+                                            )
+                                        )
+                                    );
+                                })
                             )
                         )
                     );
@@ -3946,26 +3982,59 @@ const App = () => {
   const [language, setLanguage] = useState(
     () => (localStorage.getItem('appLanguage')) || 'en'
   );
-  const [cartItems, setCartItems] = useState(() => {
-    try {
-      const savedCart = localStorage.getItem('cartItems');
-      if (savedCart) {
-        const parsedCart = JSON.parse(savedCart);
-        if (Array.isArray(parsedCart)) {
-          return parsedCart.map((item) => {
-            if (item && item.series && typeof item.series.id !== 'string') {
-              item.series.id = String(item.series.id);
+    const [cartItems, setCartItems] = useState(() => {
+        try {
+            const savedCart = localStorage.getItem('cartItems');
+            if (!savedCart) return [];
+            
+            let parsedCart = JSON.parse(savedCart);
+            if (!Array.isArray(parsedCart)) return [];
+
+            // Migration logic: check if the first item has the old structure
+            if (parsedCart.length > 0 && parsedCart[0].series && !Array.isArray(parsedCart[0].series)) {
+                console.log("Migrating old cart structure to new grouped structure.");
+                const migratedCart = [];
+                parsedCart.forEach(oldItem => {
+                    if (!oldItem.variant || !oldItem.series) return; // Skip malformed old items
+
+                    const existingCartItem = migratedCart.find(item => item.variant.id === oldItem.variant.id);
+
+                    if (existingCartItem) {
+                        existingCartItem.series.push({ ...oldItem.series, quantity: oldItem.quantity });
+                    } else {
+                        migratedCart.push({
+                            productName: oldItem.productName,
+                            productCode: oldItem.productCode,
+                            discountPercentage: oldItem.discountPercentage || 0,
+                            variant: {
+                                id: oldItem.variant.id,
+                                colorName: oldItem.variant.colorName,
+                                imageUrl: oldItem.variant.imageUrl
+                            },
+                            series: [{ ...oldItem.series, quantity: oldItem.quantity }]
+                        });
+                    }
+                });
+                return migratedCart;
             }
-            return item;
-          });
+
+            // If not migrating, just ensure series IDs are strings (for safety from old bugs)
+            return parsedCart.map(item => {
+                if (item && item.series && Array.isArray(item.series)) {
+                    item.series.forEach(s => {
+                        if (s && typeof s.id !== 'string') {
+                            s.id = String(s.id);
+                        }
+                    });
+                }
+                return item;
+            });
+
+        } catch (error) {
+            console.error("Failed to parse or migrate cart items from localStorage", error);
+            return [];
         }
-      }
-      return [];
-    } catch (error) {
-      console.error("Failed to parse cart items from localStorage", error);
-      return [];
-    }
-  });
+    });
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalData, setModalData] = useState(null);
@@ -4294,9 +4363,11 @@ const App = () => {
         let totalUnits = 0;
         
         cartItems.forEach(item => {
-            const quantity = Number(item.quantity || 0);
-            totalPacks += quantity;
-            totalUnits += getUnitsPerSeries(item.series.name) * quantity;
+            item.series.forEach(s => {
+                const quantity = Number(s.quantity || 0);
+                totalPacks += quantity;
+                totalUnits += getUnitsPerSeries(s.name) * quantity;
+            });
         });
 
         return {
@@ -4313,67 +4384,69 @@ const App = () => {
             videoVariants: p.variants.filter(v => v.video_url)
         })).filter(item => item.mainVideoUrl || item.videoVariants.length > 0);
     }, [products]);
-
-  const handleAddToCart = (series, quantity) => {
-    setCartItems(prevItems => {
-      const existingItemIndex = prevItems.findIndex(item => item.series.id === series.id);
-      if (existingItemIndex > -1) {
-        const newItems = [...prevItems];
-        newItems[existingItemIndex].quantity = Number(newItems[existingItemIndex].quantity || 0) + quantity;
-        return newItems;
-      } else {
-        const product = products.find(p => p.variants.some(v => v.series.some(s => s.id === series.id)));
-        const variant = product.variants.find(v => v.series.some(s => s.id === series.id));
-        return [...prevItems, { 
-            productName: product.name,
-            productCode: product.code,
-            discountPercentage: product.discountPercentage || 0,
-            variant: { id: variant.id, colorName: variant.colorName, imageUrl: variant.imageUrl },
-            series, 
-            quantity 
-        }];
-      }
-    });
-  };
   
     const handleBulkAddToCart = (items) => {
         setCartItems(prevCartItems => {
-            const newCartItems = [...prevCartItems];
-            
+            const newCartItems = JSON.parse(JSON.stringify(prevCartItems));
+
             items.forEach(itemToAdd => {
-                const existingItemIndex = newCartItems.findIndex(item => item.series.id === itemToAdd.series.id);
-                if (existingItemIndex > -1) {
-                    newCartItems[existingItemIndex].quantity = Number(newCartItems[existingItemIndex].quantity || 0) + itemToAdd.quantity;
+                const { product, variant, series, quantity } = itemToAdd;
+                const existingCartItemIndex = newCartItems.findIndex(item => item.variant.id === variant.id);
+
+                if (existingCartItemIndex > -1) {
+                    const cartItem = newCartItems[existingCartItemIndex];
+                    const existingSeriesIndex = cartItem.series.findIndex(s => s.id === series.id);
+
+                    if (existingSeriesIndex > -1) {
+                        cartItem.series[existingSeriesIndex].quantity += quantity;
+                    } else {
+                        cartItem.series.push({ ...series, quantity });
+                    }
                 } else {
-                     newCartItems.push({
-                         productName: itemToAdd.product.name,
-                         productCode: itemToAdd.product.code,
-                         discountPercentage: itemToAdd.product.discountPercentage || 0,
-                         variant: { id: itemToAdd.variant.id, colorName: itemToAdd.variant.colorName, imageUrl: itemToAdd.variant.imageUrl },
-                         series: itemToAdd.series,
-                         quantity: itemToAdd.quantity
-                     });
+                    newCartItems.push({
+                        productName: product.name,
+                        productCode: product.code,
+                        discountPercentage: product.discountPercentage || 0,
+                        variant: {
+                            id: variant.id,
+                            colorName: variant.colorName,
+                            imageUrl: variant.imageUrl
+                        },
+                        series: [{ ...series, quantity }]
+                    });
                 }
             });
-            
             return newCartItems;
         });
     };
 
-  const handleRemoveFromCart = (seriesId) => {
-    setCartItems(prevItems => prevItems.filter(item => item.series.id !== seriesId));
-  };
+    const handleUpdateQuantity = (variantId, seriesId, quantity) => {
+        setCartItems(prevCartItems => {
+            const newCartItems = JSON.parse(JSON.stringify(prevCartItems));
+            const cartItemIndex = newCartItems.findIndex(item => item.variant.id === variantId);
 
-  const handleUpdateQuantity = (seriesId, quantity) => {
-    setCartItems(prevItems => {
-        if (quantity <= 0) {
-            return prevItems.filter(item => item.series.id !== seriesId);
-        }
-        return prevItems.map(item =>
-            item.series.id === seriesId ? { ...item, quantity: String(quantity) } : item
-        );
-    });
-  };
+            if (cartItemIndex > -1) {
+                const cartItem = newCartItems[cartItemIndex];
+                const seriesIndex = cartItem.series.findIndex(s => s.id === seriesId);
+                
+                if (seriesIndex > -1) {
+                    if (quantity <= 0) {
+                        cartItem.series.splice(seriesIndex, 1);
+                    } else {
+                        cartItem.series[seriesIndex].quantity = quantity;
+                    }
+                }
+                if (cartItem.series.length === 0) {
+                    newCartItems.splice(cartItemIndex, 1);
+                }
+            }
+            return newCartItems;
+        });
+    };
+
+    const handleRemoveFromCart = (variantId, seriesId) => {
+        handleUpdateQuantity(variantId, seriesId, 0);
+    };
 
   const handleOpenModal = (product, variant) => {
     setModalData({ product, variant });
@@ -4413,16 +4486,17 @@ const App = () => {
         setIsSharing(true);
         try {
             const totals = cartItems.reduce((acc, item) => {
-              const { currency, price } = item.series;
-              const discount = item.discountPercentage || 0;
-              const discountedPrice = price * (1 - (discount / 100));
-              const quantity = Number(item.quantity || 0);
-              if (!acc[currency]) acc[currency] = 0;
-              acc[currency] += discountedPrice * quantity;
-              return acc;
+                const discount = item.discountPercentage || 0;
+                item.series.forEach(s => {
+                    const { currency, price, quantity } = s;
+                    const discountedPrice = price * (1 - (discount / 100));
+                    const numQuantity = Number(quantity || 0);
+                    if (!acc[currency]) acc[currency] = 0;
+                    acc[currency] += discountedPrice * numQuantity;
+                });
+                return acc;
             }, {});
             
-            // Temporarily render component to capture it
             const tempDiv = document.createElement('div');
             document.body.appendChild(tempDiv);
             
@@ -4439,7 +4513,6 @@ const App = () => {
             
             await new Promise(resolve => {
                 root.render(element);
-                // Use a short timeout to ensure the component is fully rendered with images
                 setTimeout(resolve, 500);
             });
             
@@ -4668,29 +4741,29 @@ const App = () => {
             for (const item of cartItems) {
                 const product = products.find(p => p.code === item.productCode);
                 if (!product) continue;
-
-                const parsedSeries = parseSeriesString(item.series.name);
-                
-                for (const { size, quantity: quantityInSeries } of parsedSeries) {
-                    const totalSizeQuantity = Number(item.quantity) * quantityInSeries;
-                    
-                    const row = {
-                        [t.excelCuvalNo]: '',
-                        [t.excelMarka]: storeSettings.brand || '',
-                        [t.excelUreticiUnvani]: storeSettings.manufacturerTitle || '',
-                        [t.excelModelArt]: item.productCode,
-                        [t.excelMalCinsi]: item.productName,
-                        [t.excelCinsiyet]: t[product.gender?.toLowerCase()] || product.gender || '',
-                        [t.excelYas]: '',
-                        [t.excelMensei]: storeSettings.origin || '',
-                        [t.excelIcerik]: product.content || '',
-                        [t.excelDokuma]: '',
-                        [t.excelRenk]: item.variant.colorName,
-                        [t.excelBeden]: size,
-                        [t.excelAdet]: totalSizeQuantity
-                    };
-                    dataForSheet.push(row);
-                    grandTotal += totalSizeQuantity;
+                for (const series of item.series) {
+                    const parsedSeries = parseSeriesString(series.name);
+                    for (const { size, quantity: quantityInSeries } of parsedSeries) {
+                        const totalSizeQuantity = Number(series.quantity) * quantityInSeries;
+                        
+                        const row = {
+                            [t.excelCuvalNo]: '',
+                            [t.excelMarka]: storeSettings.brand || '',
+                            [t.excelUreticiUnvani]: storeSettings.manufacturerTitle || '',
+                            [t.excelModelArt]: item.productCode,
+                            [t.excelMalCinsi]: item.productName,
+                            [t.excelCinsiyet]: t[product.gender?.toLowerCase()] || product.gender || '',
+                            [t.excelYas]: '',
+                            [t.excelMensei]: storeSettings.origin || '',
+                            [t.excelIcerik]: product.content || '',
+                            [t.excelDokuma]: '',
+                            [t.excelRenk]: item.variant.colorName,
+                            [t.excelBeden]: size,
+                            [t.excelAdet]: totalSizeQuantity
+                        };
+                        dataForSheet.push(row);
+                        grandTotal += totalSizeQuantity;
+                    }
                 }
             }
 
