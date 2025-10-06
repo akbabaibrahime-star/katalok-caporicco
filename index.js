@@ -950,6 +950,12 @@ const CartSidebar = ({ isOpen, onClose, cartItems, onRemoveItem, onUpdateQuantit
                     const { productName, productCode, discountPercentage, variant, series } = item;
                     const hasDiscount = typeof discountPercentage === 'number' && discountPercentage > 0;
                     const isExpanded = expandedVariantId === variant.id;
+                    
+                    const sortedSeries = [...series].sort((a, b) => {
+                        const priceA = hasDiscount ? a.price * (1 - (discountPercentage / 100)) : a.price;
+                        const priceB = hasDiscount ? b.price * (1 - (discountPercentage / 100)) : b.price;
+                        return priceA - priceB;
+                    });
 
                     return (
                         React.createElement("div", { key: variant.id, className: `cart-item-group ${isExpanded ? 'expanded' : ''}` },
@@ -968,7 +974,7 @@ const CartSidebar = ({ isOpen, onClose, cartItems, onRemoveItem, onUpdateQuantit
                                 )
                             ),
                             React.createElement("div", { className: "cart-series-list" },
-                                series.map(s => {
+                                sortedSeries.map(s => {
                                     const seriesPrice = s.price;
                                     const discountedSeriesPrice = hasDiscount ? seriesPrice * (1 - (discountPercentage / 100)) : seriesPrice;
                                     const units = getUnitsPerSeries(s.name);
