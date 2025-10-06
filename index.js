@@ -4573,11 +4573,13 @@ const App = () => {
                     };
                 }
 
-                const parsedSeries = parseSeriesString(item.series.name);
-                parsedSeries.forEach(({ size, quantity: quantityInSeries }) => {
-                    const totalSizeQuantity = Number(item.quantity) * quantityInSeries;
-                    const currentTotal = acc[key].sizeTotals.get(size) || 0;
-                    acc[key].sizeTotals.set(size, currentTotal + totalSizeQuantity);
+                item.series.forEach(seriesItem => {
+                    const parsedSeries = parseSeriesString(seriesItem.name);
+                    parsedSeries.forEach(({ size, quantity: quantityInSeries }) => {
+                        const totalSizeQuantity = Number(seriesItem.quantity) * quantityInSeries;
+                        const currentTotal = acc[key].sizeTotals.get(size) || 0;
+                        acc[key].sizeTotals.set(size, currentTotal + totalSizeQuantity);
+                    });
                 });
 
                 return acc;
