@@ -75,11 +75,18 @@ body {
     gap: 12px;
 }
 
-.store-logo-img {
+.store-logo-img, .store-name-img {
     height: 40px;
     max-width: 150px;
     object-fit: contain;
     cursor: pointer;
+}
+
+.store-name-img-mobile {
+  display: none;
+  height: 35px;
+  max-width: 120px;
+  object-fit: contain;
 }
 
 .store-logo {
