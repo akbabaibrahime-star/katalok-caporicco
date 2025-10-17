@@ -1144,6 +1144,17 @@ const CartSidebar = ({ isOpen, onClose, cartItems, onRemoveItem, onUpdateQuantit
 
 // --- ORDER SHARE IMAGE COMPONENT ---
 const OrderShareImage = forwardRef(({ cartItems, totals, t, storeSettings, cartStats }, ref) => {
+    const flatCart = useMemo(() => cartItems.flatMap(item => 
+        item.series.map(s => ({
+            productName: item.productName,
+            productCode: item.productCode,
+            discountPercentage: item.discountPercentage,
+            variant: item.variant,
+            series: s,
+            uniqueId: `${item.variant.id}-${s.id}`
+        }))
+    ), [cartItems]);
+
     return (
         React.createElement("div", { id: "order-share-container", ref: ref },
             React.createElement("div", { className: "order-share-header" },
@@ -1154,58 +1165,43 @@ const OrderShareImage = forwardRef(({ cartItems, totals, t, storeSettings, cartS
                 React.createElement("p", null, new Date().toLocaleString())
             ),
             React.createElement("div", { className: "order-share-body" },
-                cartItems.map(item => {
-                    const { productName, productCode, discountPercentage, variant, series } = item;
+                flatCart.map(flatItem => {
+                    const { productName, productCode, discountPercentage, variant, series, uniqueId } = flatItem;
                     const hasDiscount = typeof discountPercentage === 'number' && discountPercentage > 0;
-                    return (
-                        React.createElement("div", { key: variant.id, className: "order-share-group" },
-                            React.createElement("div", { className: "order-share-group-header" },
-                                React.createElement("img", { src: getTransformedImageUrl(variant.imageUrl, { width: 120, height: 120 }), alt: variant.colorName, className: "order-share-img", crossOrigin: "anonymous" }),
-                                React.createElement("div", { className: "order-share-group-info" },
-                                    React.createElement("p", { className: "pname" },
-                                        productName, " ", React.createElement("span", { className: "pcode" }, `(${productCode})`),
-                                        hasDiscount && React.createElement("span", { className: "discount-tag", style: { marginLeft: '8px', fontSize: '0.7rem'} }, `%${discountPercentage}`)
-                                    ),
-                                    React.createElement("p", { className: "pcolor" }, variant.colorName)
-                                )
-                            ),
-                            React.createElement("div", { className: "order-share-series-list" },
-                                series.map(s => {
-                                    const seriesPrice = s.price;
-                                    const discountedSeriesPrice = hasDiscount ? seriesPrice * (1 - (discountPercentage / 100)) : seriesPrice;
-                                    const units = getUnitsPerSeries(s.name);
-                                    const unitPrice = units > 1 ? seriesPrice / units : null;
-                                    const discountedUnitPrice = (unitPrice && hasDiscount) ? unitPrice * (1 - (discountPercentage / 100)) : unitPrice;
+                    const seriesPrice = series.price;
+                    const discountedSeriesPrice = hasDiscount ? seriesPrice * (1 - (discountPercentage / 100)) : seriesPrice;
+                    const units = getUnitsPerSeries(series.name);
+                    const unitPrice = units > 1 ? seriesPrice / units : null;
+                    const discountedUnitPrice = (unitPrice && hasDiscount) ? unitPrice * (1 - (discountPercentage / 100)) : unitPrice;
 
-                                    return (
-                                        React.createElement("div", { key: s.id, className: "order-share-series-item" },
-                                            React.createElement("div", { className: "details" },
-                                                React.createElement("p", { className: "series-name" }, s.name),
-                                                unitPrice !== null && (
-                                                    React.createElement("p", { className: "unit-price" },
-                                                        "(",
-                                                        hasDiscount ?
-                                                        React.createElement(React.Fragment, null,
-                                                            React.createElement("span", { className: "original-price" }, formatCurrency(unitPrice, s.currency)),
-                                                            " / ",
-                                                            React.createElement("span", null, formatCurrency(discountedUnitPrice, s.currency))
-                                                        ) :
-                                                        formatCurrency(unitPrice, s.currency),
-                                                        `${t.perPiece})`
-                                                    )
-                                                )
-                                            ),
-                                            React.createElement("div", { className: "pricing" },
-                                                React.createElement("p", { className: "price" }, 
-                                                    hasDiscount && React.createElement("span", { className: "original-price", style: { display: 'block', fontSize: '0.8em', fontWeight: '400' } }, formatCurrency(Number(s.quantity || 0) * seriesPrice, s.currency)),
-                                                    formatCurrency(Number(s.quantity || 0) * discountedSeriesPrice, s.currency)
-                                                ),
-                                                React.createElement("p", { className: "qty" }, `Qty: ${s.quantity}`)
-                                            )
-                                        )
-                                    );
-                                })
+                    return React.createElement("div", { key: uniqueId, className: "order-share-item" },
+                        React.createElement("img", { src: getTransformedImageUrl(variant.imageUrl, { width: 120, height: 120 }), alt: variant.colorName, className: "order-share-img", crossOrigin: "anonymous" }),
+                        React.createElement("div", { className: "order-share-details" },
+                            React.createElement("p", { className: "order-share-pname" },
+                                productName,
+                                React.createElement("span", { className: "order-share-pcode" }, ` (${productCode})`)
+                            ),
+                            React.createElement("p", { className: "order-share-pseries" },
+                                `${variant.colorName} - ${series.name} `,
+                                unitPrice !== null && React.createElement("span", { className: "order-share-unit-price" },
+                                    `(`,
+                                    hasDiscount ?
+                                    React.createElement(React.Fragment, null,
+                                        React.createElement("span", { className: "original-price" }, formatCurrency(unitPrice, series.currency)),
+                                        " / ",
+                                        React.createElement("span", null, formatCurrency(discountedUnitPrice, series.currency))
+                                    ) :
+                                    formatCurrency(unitPrice, series.currency),
+                                    ` ${t.perPiece})`
+                                )
                             )
+                        ),
+                        React.createElement("div", { className: "order-share-pricing" },
+                            React.createElement("p", { className: "price" },
+                                hasDiscount && React.createElement("span", { className: "original-price", style: { display: 'block', fontSize: '0.8em', fontWeight: '400' } }, formatCurrency(Number(series.quantity || 0) * seriesPrice, series.currency)),
+                                formatCurrency(Number(series.quantity || 0) * discountedSeriesPrice, series.currency)
+                            ),
+                            React.createElement("p", { className: "qty" }, `Qty: ${series.quantity}`)
                         )
                     );
                 })
@@ -2565,29 +2561,33 @@ const StoreSettingsEditor = ({ settings, onFetchData, t }) => {
         }
     };
 
-    const handleLogoUpload = async (e) => {
+    const handleImageUpload = (e, field) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
         const reader = new FileReader();
         reader.onloadend = () => {
             if (typeof reader.result === 'string') {
-                const logoDataUrl = reader.result;
-                setCurrentSettings((s) => ({ ...s, logo: logoDataUrl }));
+                setCurrentSettings((s) => ({ ...s, [field]: reader.result }));
             }
         };
         reader.readAsDataURL(file);
     };
+
+    const handleRemoveImage = (field) => {
+        setCurrentSettings(s => ({ ...s, [field]: null }));
+    };
     
     const handleSave = async () => {
-        const { name, logo, brand, manufacturerTitle, origin, nameColor } = currentSettings;
+        const { name, logo, brand, manufacturerTitle, origin, nameColor, nameImage } = currentSettings;
         const { error } = await db.from('store_settings').update({
             name,
             logo,
             brand,
             manufacturer_title: manufacturerTitle,
             origin,
-            name_color: nameColor
+            name_color: nameColor,
+            name_image: nameImage
         }).eq('id', 1);
 
         if (error) {
@@ -2609,6 +2609,15 @@ const StoreSettingsEditor = ({ settings, onFetchData, t }) => {
                 React.createElement("input", { type: "text", name: "name", value: currentSettings.name || '', onChange: handleSettingChange })
             ),
             React.createElement("div", { className: "form-group" },
+                React.createElement("label", null, t.storeNameImage),
+                React.createElement("div", { className: "image-upload-container" },
+                    currentSettings.nameImage && React.createElement("img", { src: currentSettings.nameImage, alt: "Name Preview", className: "logo-preview" }),
+                    React.createElement("input", { type: "file", id: "nameImageUpload", style: { display: 'none' }, accept: "image/*", onChange: (e) => handleImageUpload(e, 'nameImage') }),
+                    React.createElement("label", { htmlFor: "nameImageUpload", className: "btn-secondary" }, t.uploadNameImage),
+                    currentSettings.nameImage && React.createElement("button", { onClick: () => handleRemoveImage('nameImage'), className: "btn-danger" }, t.remove)
+                )
+            ),
+            React.createElement("div", { className: "form-group" },
                 React.createElement("label", null, t.storeNameColor),
                 React.createElement("input", { type: "color", name: "nameColor", value: currentSettings.nameColor || '#192A56', onChange: handleSettingChange, className: "color-input" })
             ),
@@ -2628,8 +2637,9 @@ const StoreSettingsEditor = ({ settings, onFetchData, t }) => {
                 React.createElement("label", null, t.storeLogoLabel),
                 React.createElement("div", { className: "image-upload-container" },
                     currentSettings.logo && React.createElement("img", { src: currentSettings.logo, alt: "Logo Preview", className: "logo-preview" }),
-                    React.createElement("input", { type: "file", id: "logoUpload", style: { display: 'none' }, accept: "image/*", onChange: handleLogoUpload }),
-                    React.createElement("label", { htmlFor: "logoUpload", className: "btn-secondary" }, t.uploadLogo)
+                    React.createElement("input", { type: "file", id: "logoUpload", style: { display: 'none' }, accept: "image/*", onChange: (e) => handleImageUpload(e, 'logo') }),
+                    React.createElement("label", { htmlFor: "logoUpload", className: "btn-secondary" }, t.uploadLogo),
+                    currentSettings.logo && React.createElement("button", { onClick: () => handleRemoveImage('logo'), className: "btn-danger" }, t.remove)
                 )
             ),
             React.createElement("div", { className: "form-actions" },
@@ -4165,6 +4175,7 @@ const App = () => {
                   manufacturerTitle: settingsData.manufacturer_title,
                   origin: settingsData.origin,
                   nameColor: settingsData.name_color,
+                  nameImage: settingsData.name_image,
                   adminPassword: settingsData.admin_password || 'klm!44'
               });
           }
@@ -4837,8 +4848,12 @@ const App = () => {
           React.createElement("div", { className: "header-content" },
             React.createElement("div", { className: "store-info" },
                 storeSettings.logo && React.createElement("img", { src: storeSettings.logo, alt: "Store Logo", className: "store-logo-img", onClick: handleAdminToggle }),
-                React.createElement("h1", { className: "store-logo", onClick: handleLayoutToggle }, storeSettings.name),
-                React.createElement("h1", { className: "store-name-mobile-gallery", onClick: () => window.location.reload(), style: { color: storeSettings.nameColor || '#192A56' } }, storeSettings.name)
+                storeSettings.nameImage 
+                    ? React.createElement("img", { src: storeSettings.nameImage, alt: storeSettings.name, className: "store-name-img", onClick: handleLayoutToggle })
+                    : React.createElement("h1", { className: "store-logo", onClick: handleLayoutToggle }, storeSettings.name),
+                storeSettings.nameImage
+                    ? React.createElement("img", { src: storeSettings.nameImage, alt: storeSettings.name, className: "store-name-img-mobile", onClick: () => window.location.reload() })
+                    : React.createElement("h1", { className: "store-name-mobile-gallery", onClick: () => window.location.reload(), style: { color: storeSettings.nameColor || '#192A56' } }, storeSettings.name)
             ),
             !isAdminView && (
                 React.createElement("div", { className: `search-bar desktop-search-bar ${isMobileSearchVisible ? 'mobile-search-bar-active' : ''}` },
