@@ -1967,6 +1967,18 @@ const ProductForm = ({ product: initialProduct, seriesTemplates, collarTypes, co
 
 const ProductManager = ({ products, seriesTemplates, collarTypes, contentTemplates, genderTemplates, onFetchData, t }) => {
     const [editingProduct, setEditingProduct] = useState(null);
+    const [searchQuery, setSearchQuery] = useState('');
+
+    const filteredProducts = useMemo(() => {
+        if (!searchQuery.trim()) {
+            return products;
+        }
+        const lowerCaseQuery = searchQuery.toLowerCase().trim();
+        return products.filter(p =>
+            p.name.toLowerCase().includes(lowerCaseQuery) ||
+            p.code.toLowerCase().includes(lowerCaseQuery)
+        );
+    }, [searchQuery, products]);
 
     const handleAddNew = () => {
         const newProduct = {
@@ -2101,8 +2113,17 @@ const ProductManager = ({ products, seriesTemplates, collarTypes, contentTemplat
                 React.createElement("h2", null, t.productManagement),
                 React.createElement("button", { className: "btn-primary", onClick: handleAddNew }, "+ ", t.addNewProduct)
             ),
+            React.createElement("div", { className: "form-group" },
+                React.createElement("input", {
+                    type: "text",
+                    value: searchQuery,
+                    onChange: (e) => setSearchQuery(e.target.value),
+                    placeholder: t.searchByProductNameOrCode,
+                    className: "quick-stock-search-input",
+                })
+            ),
             React.createElement("div", { className: "admin-product-list" },
-                products.map((product) => (
+                filteredProducts.map((product) => (
                     React.createElement("div", { key: product.id, className: "admin-product-row" },
                         React.createElement("img", { src: getTransformedImageUrl(product.variants[0]?.imageUrl, { width: 120, height: 120 }) || '', alt: product.name, className: "admin-product-thumb", crossOrigin: "anonymous" }),
                         React.createElement("div", { className: "admin-product-info" },
