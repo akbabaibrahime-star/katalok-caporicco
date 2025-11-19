@@ -556,32 +556,33 @@ const getTransformedImageUrl = (
   originalUrl,
   options
 ) => {
-  // DİKKAT: Supabase panelinde özellik kapalı olduğu için (buton pasif),
-  // site bozulmasın diye bunu geçici olarak 'false' yaptık.
-  // İleride Pro pakete geçip özelliği açarsanız bunu 'true' yapabilirsiniz.
-  const USE_IMAGE_OPTIMIZATION = false;
+  if (!originalUrl) return '';
 
-  if (!USE_IMAGE_OPTIMIZATION) {
-    return originalUrl || '';
+  // Avoid optimizing data URIs or blob URLs (local previews)
+  if (originalUrl.startsWith('data:') || originalUrl.startsWith('blob:')) {
+    return originalUrl;
   }
 
-  if (!originalUrl || !originalUrl.includes('supabase.co/storage/v1/object/public')) {
-    return originalUrl || ''; // Return original if not a Supabase public URL or is null
-  }
-
+  // Use 'wsrv.nl' as a free global CDN/Image Proxy
+  // This works even if Supabase Image Transformation is disabled on the Free Plan.
   try {
-    const url = new URL(originalUrl);
-    url.pathname = url.pathname.replace('/object/public/', '/render/image/public/');
+    const url = new URL('https://wsrv.nl/');
+    url.searchParams.append('url', originalUrl);
     
-    url.searchParams.set('width', String(options.width));
-    url.searchParams.set('height', String(options.height));
-    url.searchParams.set('resize', options.resize || 'cover');
-    url.searchParams.set('quality', String(options.quality || 80));
+    if (options.width) url.searchParams.append('w', String(options.width));
+    if (options.height) url.searchParams.append('h', String(options.height));
     
+    // 'fit' parameter: 'cover', 'contain', 'inside', 'outside'
+    url.searchParams.append('fit', options.resize || 'cover');
+    
+    // Quality & Format
+    url.searchParams.append('q', String(options.quality || 80));
+    url.searchParams.append('output', 'webp');
+
     return url.toString();
   } catch (error) {
-    console.error("Failed to transform image URL:", originalUrl, error);
-    return originalUrl; // Return original on failure
+    console.error("Image transformation error:", error);
+    return originalUrl;
   }
 };
 
