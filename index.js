@@ -556,6 +556,15 @@ const getTransformedImageUrl = (
   originalUrl,
   options
 ) => {
+  // DİKKAT: Supabase panelinde özellik kapalı olduğu için (buton pasif),
+  // site bozulmasın diye bunu geçici olarak 'false' yaptık.
+  // İleride Pro pakete geçip özelliği açarsanız bunu 'true' yapabilirsiniz.
+  const USE_IMAGE_OPTIMIZATION = false;
+
+  if (!USE_IMAGE_OPTIMIZATION) {
+    return originalUrl || '';
+  }
+
   if (!originalUrl || !originalUrl.includes('supabase.co/storage/v1/object/public')) {
     return originalUrl || ''; // Return original if not a Supabase public URL or is null
   }
